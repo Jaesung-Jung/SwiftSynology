@@ -55,7 +55,7 @@ public struct AuthorizationService: SynologyAPIClient {
         "enable_device_token": deviceName != nil ? "yes" : "no"
       ]
     )
-    let authorization = try await request(api)
+    let authorization = try await request(api).data()
     saveAuthorization(authorization)
     return authorization
   }
@@ -74,7 +74,7 @@ public struct AuthorizationService: SynologyAPIClient {
         "enable_device_token": "yes"
       ]
     )
-    let authorization = try await request(api)
+    let authorization = try await request(api).data()
     saveAuthorization(authorization)
     return authorization
   }

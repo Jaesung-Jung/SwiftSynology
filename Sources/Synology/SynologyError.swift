@@ -23,7 +23,7 @@
 
 import Foundation
 
-public class SynologyError: LocalizedError, CustomStringConvertible, Hashable, Codable {
+public class SynologyError: LocalizedError, CustomStringConvertible, Hashable, Decodable {
   public let code: Int
 
   required init(code: Int) {

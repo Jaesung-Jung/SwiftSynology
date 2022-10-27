@@ -1,5 +1,5 @@
 //
-//  APIInfoProvider.swift
+//  System.swift
 //
 //  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
@@ -21,27 +21,48 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-import Foundation
+public enum System {
+}
 
-public struct APIInfoProvider: SynologyAPIClient {
-  typealias Error = SynologyError
+// MARK: - System.Connection
 
-  let serverURL: URL
-  let apiInfo: [String: APIInfo] = [:]
+extension System {
+  public struct Connection: Decodable {
+    let pid: Int
+    let from: String
+    let type: String
+    let who: String
+    let desc: String
 
-  public init(serverURL: URL) {
-    self.serverURL = serverURL
+    enum CodingKeys: String, CodingKey {
+      case pid
+      case from
+      case type
+      case who
+      case desc = "descr"
+    }
   }
+}
 
-  public func apiInfo() async throws -> [String: APIInfo] {
-    let api = SynologyAPI<[String: APIInfo]>(
-      name: "SYNO.API.Info",
-      method: "Query",
-      version: 1,
-      parameters: [
-        "query": "all"
-      ]
-    )
-    return try await request(api).data()
+// MARK: - System.Process
+
+extension System {
+  public struct Process: Decodable {
+    let pid: Int
+    let command: String
+    let cpu: Int
+    let memory: UInt
+    let sharedMemory: UInt
+    let status: String
+    var isRunning: Bool { status == "R" }
+
+    enum CodingKeys: String, CodingKey {
+      case pid
+      case command
+      case cpu
+      case memory = "mem"
+      case sharedMemory = "mem_shared"
+      case status
+    }
   }
 }

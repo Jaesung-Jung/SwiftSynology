@@ -43,8 +43,8 @@ extension SynologyAPIClient {
     _ = try await dataRequest(api).serializingDecodable(SynologyEmptyResponse<Error>.self).value
   }
 
-  func request<Data: Decodable>(_ api: SynologyAPI<Data>) async throws -> Data {
-    return try await dataRequest(api).serializingDecodable(SynologyResponse<Data, Error>.self).value.data()
+  func request<Data: Decodable>(_ api: SynologyAPI<Data>) async throws -> SynologyResponse<Data, Error> {
+    return try await dataRequest(api).serializingDecodable(SynologyResponse<Data, Error>.self).value
   }
 
   func dataRequest<Data>(_ api: SynologyAPI<Data>) -> DataRequest {

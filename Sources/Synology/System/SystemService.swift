@@ -1,5 +1,5 @@
 //
-//  APIInfoProvider.swift
+//  SystemService.swift
 //
 //  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
@@ -23,25 +23,26 @@
 
 import Foundation
 
-public struct APIInfoProvider: SynologyAPIClient {
+public struct SystemService: SynologyAPIClient {
   typealias Error = SynologyError
 
   let serverURL: URL
-  let apiInfo: [String: APIInfo] = [:]
+  let apiInfo: [String : APIInfo]
+  let authorization: Authorization?
 
-  public init(serverURL: URL) {
-    self.serverURL = serverURL
+  public func currentConnections() async throws -> [System.Connection] {
+    let api = SynologyAPI<[System.Connection]>(
+      name: "SYNO.Core.CurrentConnection",
+      method: "get"
+    )
+    return try await request(api).data(path: "items")
   }
 
-  public func apiInfo() async throws -> [String: APIInfo] {
-    let api = SynologyAPI<[String: APIInfo]>(
-      name: "SYNO.API.Info",
-      method: "Query",
-      version: 1,
-      parameters: [
-        "query": "all"
-      ]
+  public func processes() async throws -> [System.Process] {
+    let api = SynologyAPI<[System.Process]>(
+      name: "SYNO.Core.System.Process",
+      method: "list"
     )
-    return try await request(api).data()
+    return try await request(api).data(path: "process")
   }
 }

@@ -28,6 +28,10 @@ public struct SynologyService {
   let serverURL: URL
   let apiInfo: [String: APIInfo]
 
+  var authorization: Authorization? {
+    AuthorizationService(serverURL: serverURL, apiInfo: apiInfo).authorization
+  }
+
   public init(serverURL: URL) async throws {
     self.serverURL = serverURL
     self.apiInfo = try await APIInfoProvider(serverURL: serverURL).apiInfo()
@@ -35,5 +39,9 @@ public struct SynologyService {
 
   public func auth() -> AuthorizationService {
     return AuthorizationService(serverURL: serverURL, apiInfo: apiInfo)
+  }
+
+  public func system() -> SystemService {
+    return SystemService(serverURL: serverURL, apiInfo: apiInfo, authorization: authorization)
   }
 }

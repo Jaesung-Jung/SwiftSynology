@@ -24,14 +24,23 @@
 import Foundation
 
 struct SynologyResponse<Data: Decodable, Error: SynologyError>: Decodable {
-  let result: Result<Data, Error>
+  let container: KeyedDecodingContainer<StringCodingKey>
+  let defaultKey: StringCodingKey = "data"
 
   func data() throws -> Data {
-    switch result {
-    case .success(let data):
-      return data
-    case .failure(let error):
-      throw error
+    return try container.decode(Data.self, forKey: defaultKey)
+  }
+
+  func data(path: StringCodingKey...) throws -> Data {
+    if let key = path.last {
+      return try [[defaultKey], path.dropLast(1)]
+        .flatMap { $0 }
+        .reduce(container) {
+          try $0.nestedContainer(keyedBy: StringCodingKey.self, forKey: $1)
+        }
+        .decode(Data.self, forKey: key)
+    } else {
+      return try container.decode(Data.self, forKey: defaultKey)
     }
   }
 
@@ -39,9 +48,9 @@ struct SynologyResponse<Data: Decodable, Error: SynologyError>: Decodable {
     let container = try decoder.container(keyedBy: StringCodingKey.self)
     let success = try container.decode(Bool.self, forKey: "success")
     if success {
-      result = .success(try container.decode(Data.self, forKey: "data"))
+      self.container = container
     } else {
-      result = .failure(try container.decode(Error.self, forKey: "error"))
+      throw try container.decode(Error.self, forKey: "error")
     }
   }
 }
