@@ -27,7 +27,7 @@ public struct APIInfoProvider: SynologyAPIClient {
   typealias Error = SynologyError
 
   let serverURL: URL
-  let apiInfo: [String : APIInfo] = [:]
+  let apiInfo: [String: APIInfo] = [:]
 
   public init(serverURL: URL) {
     self.serverURL = serverURL

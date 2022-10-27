@@ -28,12 +28,12 @@ public struct AuthorizationService: SynologyAPIClient {
   typealias Error = AuthorizationError
 
   let serverURL: URL
-  let apiInfo: [String : APIInfo]
+  let apiInfo: [String: APIInfo]
   let keychain: Keychain
 
   public var authorization: Authorization? { obtainAuthorization() }
 
-  init(serverURL: URL, apiInfo: [String : APIInfo]) {
+  init(serverURL: URL, apiInfo: [String: APIInfo]) {
     self.serverURL = serverURL
     self.apiInfo = apiInfo
 

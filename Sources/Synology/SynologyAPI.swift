@@ -40,7 +40,7 @@ struct SynologyAPI<Data> {
     method: String? = nil,
     version: Int? = nil,
     httpMethod: HTTPMethod = .get,
-    parameters: [String : Any?] = [:],
+    parameters: [String: Any?] = [:],
     encoding: ParameterEncoding = URLEncoding.default,
     headers: HTTPHeaders? = nil,
     timeoutInterval: TimeInterval? = nil
