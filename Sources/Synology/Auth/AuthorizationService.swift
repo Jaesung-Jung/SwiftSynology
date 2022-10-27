@@ -22,12 +22,24 @@
 //  THE SOFTWARE.
 
 import Foundation
+import KeychainAccess
 
 public struct AuthorizationService: SynologyAPIClient {
   typealias Error = AuthorizationError
 
   let serverURL: URL
   let apiInfo: [String : APIInfo]
+  let keychain: Keychain
+
+  public var authorization: Authorization? { obtainAuthorization() }
+
+  init(serverURL: URL, apiInfo: [String : APIInfo]) {
+    self.serverURL = serverURL
+    self.apiInfo = apiInfo
+
+    let protocolType: ProtocolType = serverURL.scheme == "https" ? .https : .http
+    self.keychain = Keychain(server: serverURL.absoluteString, protocolType: protocolType)
+  }
 
   public func login(account: String, password: String, deviceName: String? = nil, otp: String? = nil) async throws -> Authorization {
     let api = SynologyAPI<Authorization>(
@@ -43,7 +55,9 @@ public struct AuthorizationService: SynologyAPIClient {
         "enable_device_token": deviceName != nil ? "yes" : "no"
       ]
     )
-    return try await request(api)
+    let authorization = try await request(api)
+    saveAuthorization(authorization)
+    return authorization
   }
 
   public func login(account: String, password: String, deviceName: String, deviceID: String) async throws -> Authorization {
@@ -60,17 +74,41 @@ public struct AuthorizationService: SynologyAPIClient {
         "enable_device_token": "yes"
       ]
     )
-    return try await request(api)
+    let authorization = try await request(api)
+    saveAuthorization(authorization)
+    return authorization
   }
 
   public func logout(_ authorization: Authorization) async throws {
-    let api = SynologyAPI<String>(
+    let api = SynologyAPI<Void>(
       name: "SYNO.API.Auth",
       method: "logout",
       parameters: [
         "_sid": authorization.sessionID
       ]
     )
-    _ = try await request(api)
+    try await request(api)
+    removeAuthorization()
+  }
+}
+
+// MARK: - AuthorizationService (Internal)
+
+extension AuthorizationService {
+  func saveAuthorization(_ authorization: Authorization) {
+    keychain["sessionID"] = authorization.sessionID
+    keychain["deviceID"] = authorization.deviceID
+  }
+
+  func obtainAuthorization() -> Authorization? {
+    guard let sessionID = keychain["sessionID"], let deviceID = keychain["deviceID"] else {
+      return nil
+    }
+    return Authorization(sessionID: sessionID, deviceID: deviceID)
+  }
+
+  func removeAuthorization() {
+    keychain["sessionID"] = nil
+    keychain["deviceID"] = nil
   }
 }

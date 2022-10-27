@@ -21,6 +21,10 @@ let package = Package(
     .package(
       url: "https://github.com/Alamofire/Alamofire.git",
       .upToNextMajor(from: "5.5.0")
+    ),
+    .package(
+      url: "https://github.com/kishikawakatsumi/KeychainAccess",
+      .upToNextMajor(from: "4.0.0")
     )
   ],
   targets: [
@@ -30,6 +34,10 @@ let package = Package(
         .product(
           name: "Alamofire",
           package: "Alamofire"
+        ),
+        .product(
+          name: "KeychainAccess",
+          package: "KeychainAccess"
         )
       ]
     ),
