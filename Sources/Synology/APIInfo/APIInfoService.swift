@@ -1,5 +1,5 @@
 //
-//  APIInfoProvider.swift
+//  APIInfoService.swift
 //
 //  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
@@ -23,11 +23,10 @@
 
 import Foundation
 
-public struct APIInfoProvider: SynologyAPIClient {
+public struct APIInfoService: SynologyAPIClient {
   typealias Error = SynologyError
 
   let serverURL: URL
-  let apiInfo: [String: APIInfo] = [:]
 
   public init(serverURL: URL) {
     self.serverURL = serverURL
@@ -42,6 +41,6 @@ public struct APIInfoProvider: SynologyAPIClient {
         "query": "all"
       ]
     )
-    return try await request(api).data()
+    return try await request(api, { _ in nil }).data()
   }
 }

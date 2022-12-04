@@ -23,25 +23,56 @@
 
 import Foundation
 import Alamofire
+import KeychainAccess
 
-public struct SynologyService {
+// MARK: - SynologyService
+
+public actor SynologyService {
+  private var _apiInfo: [String: APIInfo]?
+
   let serverURL: URL
-  let apiInfo: [String: APIInfo]
+  let keychain: Keychain
 
-  var authorization: Authorization? {
-    AuthorizationService(serverURL: serverURL, apiInfo: apiInfo).authorization
-  }
+  public var authorization: Authorization? { obtainAuthorization() }
 
-  public init(serverURL: URL) async throws {
+  public init(serverURL: URL) {
     self.serverURL = serverURL
-    self.apiInfo = try await APIInfoProvider(serverURL: serverURL).apiInfo()
+    let protocolType: ProtocolType = serverURL.scheme?.lowercased() == "https" ? .https : .http
+    self.keychain = Keychain(server: serverURL.absoluteURL, protocolType: protocolType)
   }
 
   public func auth() -> AuthorizationService {
-    return AuthorizationService(serverURL: serverURL, apiInfo: apiInfo)
+    return AuthorizationService(
+      serverURL: serverURL,
+      keychain: keychain,
+      apiInfoProvider: apiInfo
+    )
   }
 
   public func system() -> SystemService {
-    return SystemService(serverURL: serverURL, apiInfo: apiInfo, authorization: authorization)
+    return SystemService(
+      serverURL: serverURL,
+      apiInfoProvider: apiInfo,
+      authorization: authorization
+    )
+  }
+}
+
+// MARK: - SynologyService (Internal)
+
+extension SynologyService {
+  func apiInfo(_ name: String) async throws -> APIInfo? {
+    if let apiInfo = _apiInfo {
+      return apiInfo[name]
+    }
+    _apiInfo = try await APIInfoService(serverURL: serverURL).apiInfo()
+    return _apiInfo?[name]
+  }
+
+  func obtainAuthorization() -> Authorization? {
+    guard let sessionID = keychain["sessionID"], let deviceID = keychain["deviceID"] else {
+      return nil
+    }
+    return Authorization(sessionID: sessionID, deviceID: deviceID)
   }
 }

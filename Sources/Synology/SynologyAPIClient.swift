@@ -25,10 +25,11 @@ import Foundation
 import Alamofire
 
 protocol SynologyAPIClient {
+  typealias APIInfoProvider = (String) async throws -> APIInfo?
+
   associatedtype Error: SynologyError
 
   var serverURL: URL { get }
-  var apiInfo: [String: APIInfo] { get }
 
   var session: Session { get }
   var authorization: Authorization? { get }
@@ -39,17 +40,18 @@ extension SynologyAPIClient {
 
   var authorization: Authorization? { nil }
 
-  func request(_ api: SynologyAPI<Void>) async throws {
-    _ = try await dataRequest(api).serializingDecodable(SynologyEmptyResponse<Error>.self).value
+  func request(_ api: SynologyAPI<Void>, _ apiInfoProvider: APIInfoProvider) async throws {
+    let apiInfo = try await apiInfoProvider(api.name)
+    _ = try await dataRequest(api, apiInfo: apiInfo).serializingDecodable(SynologyEmptyResponse<Error>.self).value
   }
 
-  func request<Data: Decodable>(_ api: SynologyAPI<Data>) async throws -> SynologyResponse<Data, Error> {
-    return try await dataRequest(api).serializingDecodable(SynologyResponse<Data, Error>.self).value
+  func request<Data: Decodable>(_ api: SynologyAPI<Data>, _ apiInfoProvider: APIInfoProvider) async throws -> SynologyResponse<Data, Error> {
+    let apiInfo = try await apiInfoProvider(api.name)
+    return try await dataRequest(api, apiInfo: apiInfo).serializingDecodable(SynologyResponse<Data, Error>.self).value
   }
 
-  func dataRequest<Data>(_ api: SynologyAPI<Data>) -> DataRequest {
-    let info = apiInfo[api.name]
-    let version = [api.version, info?.maxVersion].compactMap { $0 }.min()
+  func dataRequest<Data>(_ api: SynologyAPI<Data>, apiInfo: APIInfo?) -> DataRequest {
+    let version = [api.version, apiInfo?.maxVersion].compactMap { $0 }.min()
     let additionalParameters: Parameters = [
       "_sid": authorization?.sessionID,
       "api": api.name,
@@ -58,7 +60,7 @@ extension SynologyAPIClient {
     ].compactMapValues { $0 }
 
     let url: URL
-    let path = info?.path ?? "entry.cgi"
+    let path = apiInfo?.path ?? "entry.cgi"
     if #available(iOS 16.0, *) {
       url = serverURL
         .appending(path: "webapi")

@@ -26,7 +26,7 @@ import Alamofire
 
 // MARK: - QuickConnect (Public)
 
-public class QuickConnect {
+public actor QuickConnect {
   private var _task: DataTask<[QuickConnect.ServerInfo]>?
 
   let session: Session = .shared
@@ -35,13 +35,17 @@ public class QuickConnect {
   }
 
   public func serverURL(for serverID: String) async throws -> URL {
-    let serverInfos = try await serverInfo(serverID: serverID)
-    let connectInfos = zip(["https", "http"], serverInfos).flatMap { $1.connectInfos(scheme: $0) }
-    let availables = await availableConnectInfos(for: connectInfos).sorted()
-    guard let first = availables.first else {
+    do {
+      let serverInfos = try await serverInfo(serverID: serverID)
+      let connectInfos = zip(["https", "http"], serverInfos).flatMap { $1.connectInfos(scheme: $0) }
+      let availables = await availableConnectInfos(for: connectInfos).sorted()
+      guard let first = availables.first else {
+        throw QuickConnect.Error.availableServerNotFound
+      }
+      return try first.url.asURL()
+    } catch {
       throw QuickConnect.Error.availableServerNotFound
     }
-    return try first.url.asURL()
   }
 }
 

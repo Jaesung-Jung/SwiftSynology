@@ -27,7 +27,7 @@ public struct SystemService: SynologyAPIClient {
   typealias Error = SynologyError
 
   let serverURL: URL
-  let apiInfo: [String : APIInfo]
+  let apiInfoProvider: APIInfoProvider
   let authorization: Authorization?
 
   public func currentConnections() async throws -> [System.Connection] {
@@ -35,7 +35,7 @@ public struct SystemService: SynologyAPIClient {
       name: "SYNO.Core.CurrentConnection",
       method: "get"
     )
-    return try await request(api).data(path: "items")
+    return try await request(api, apiInfoProvider).data(path: "items")
   }
 
   public func processes() async throws -> [System.Process] {
@@ -43,6 +43,6 @@ public struct SystemService: SynologyAPIClient {
       name: "SYNO.Core.System.Process",
       method: "list"
     )
-    return try await request(api).data(path: "process")
+    return try await request(api, apiInfoProvider).data(path: "process")
   }
 }

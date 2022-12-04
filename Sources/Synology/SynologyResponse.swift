@@ -24,34 +24,37 @@
 import Foundation
 
 struct SynologyResponse<Data: Decodable, Error: SynologyError>: Decodable {
+  let success: Bool
   let container: KeyedDecodingContainer<StringCodingKey>
-  let defaultKey: StringCodingKey = "data"
 
   func data() throws -> Data {
-    return try container.decode(Data.self, forKey: defaultKey)
+    if success {
+      return try container.decode(Data.self, forKey: "data")
+    } else {
+      throw try container.decode(Error.self, forKey: "error")
+    }
   }
 
   func data(path: StringCodingKey...) throws -> Data {
-    if let key = path.last {
-      return try [[defaultKey], path.dropLast(1)]
-        .flatMap { $0 }
-        .reduce(container) {
-          try $0.nestedContainer(keyedBy: StringCodingKey.self, forKey: $1)
-        }
-        .decode(Data.self, forKey: key)
+    if success {
+      if let key = path.last {
+        return try [["data"], path.dropLast(1)]
+          .flatMap { $0 }
+          .reduce(container) {
+            try $0.nestedContainer(keyedBy: StringCodingKey.self, forKey: $1)
+          }
+          .decode(Data.self, forKey: key)
+      } else {
+        return try container.decode(Data.self, forKey: "data")
+      }
     } else {
-      return try container.decode(Data.self, forKey: defaultKey)
+      throw try container.decode(Error.self, forKey: "error")
     }
   }
 
   init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: StringCodingKey.self)
-    let success = try container.decode(Bool.self, forKey: "success")
-    if success {
-      self.container = container
-    } else {
-      throw try container.decode(Error.self, forKey: "error")
-    }
+    self.container = try decoder.container(keyedBy: StringCodingKey.self)
+    self.success = try container.decode(Bool.self, forKey: "success")
   }
 }
 
