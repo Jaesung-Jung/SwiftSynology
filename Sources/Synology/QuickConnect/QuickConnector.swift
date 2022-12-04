@@ -1,5 +1,5 @@
 //
-//  QuickConnect.swift
+//  QuickConnector.swift
 //
 //  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
@@ -24,10 +24,10 @@
 import Foundation
 import Alamofire
 
-// MARK: - QuickConnect (Public)
+// MARK: - QuickConnector (Public)
 
-public actor QuickConnect {
-  private var _task: DataTask<[QuickConnect.ServerInfo]>?
+public actor QuickConnector {
+  private var _task: DataTask<[QuickConnector.ServerInfo]>?
 
   let session: Session = .shared
 
@@ -40,38 +40,38 @@ public actor QuickConnect {
       let connectInfos = zip(["https", "http"], serverInfos).flatMap { $1.connectInfos(scheme: $0) }
       let availables = await availableConnectInfos(for: connectInfos).sorted()
       guard let first = availables.first else {
-        throw QuickConnect.Error.availableServerNotFound
+        throw QuickConnector.Error.availableServerNotFound
       }
       return try first.url.asURL()
     } catch {
-      throw QuickConnect.Error.availableServerNotFound
+      throw QuickConnector.Error.availableServerNotFound
     }
   }
 }
 
-// MARK: - QuickConnect (Internal)
+// MARK: - QuickConnector (Internal)
 
-extension QuickConnect {
-  func serverInfo(serverID: String) async throws -> [QuickConnect.ServerInfo] {
+extension QuickConnector {
+  func serverInfo(serverID: String) async throws -> [QuickConnector.ServerInfo] {
     let url = "https://global.QuickConnect.to/Serv.php"
     let parameters = [
-      QuickConnect.ServerInfoParameter(id: "dsm_portal_https", serverID: serverID),
-      QuickConnect.ServerInfoParameter(id: "dsm_portal", serverID: serverID)
+      QuickConnector.ServerInfoParameter(id: "dsm_portal_https", serverID: serverID),
+      QuickConnector.ServerInfoParameter(id: "dsm_portal", serverID: serverID)
     ]
 
     _task?.cancel()
 
     let task = session
       .request(url, method: .post, parameters: parameters, encoder: JSONParameterEncoder.default)
-      .serializingDecodable([QuickConnect.ServerInfo].self)
+      .serializingDecodable([QuickConnector.ServerInfo].self)
 
     _task = task
 
     return try await task.value
   }
 
-  func availableConnectInfos(for connectInfos: [QuickConnect.ConnectInfo]) async -> [QuickConnect.ConnectInfo] {
-    await withTaskGroup(of: QuickConnect.ConnectInfo?.self) { group in
+  func availableConnectInfos(for connectInfos: [QuickConnector.ConnectInfo]) async -> [QuickConnector.ConnectInfo] {
+    await withTaskGroup(of: QuickConnector.ConnectInfo?.self) { group in
       for info in connectInfos {
         group.addTask {
           do {

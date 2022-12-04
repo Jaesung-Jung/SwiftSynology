@@ -1,5 +1,5 @@
 //
-//  QuickConnect+ConnectInfo.swift
+//  QuickConnector+ConnectInfo.swift
 //
 //  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
@@ -23,13 +23,13 @@
 
 import Foundation
 
-extension QuickConnect {
+extension QuickConnector {
   struct ConnectInfo: Comparable, CustomStringConvertible {
-    let type: QuickConnect.ConnectType
+    let type: QuickConnector.ConnectType
     let url: String
     let priority: Int
 
-    init(type: QuickConnect.ConnectType, scheme: String, host: String, port: Int) {
+    init(type: QuickConnector.ConnectType, scheme: String, host: String, port: Int) {
       self.type = type
       switch type {
       case .smartDNSLanIPv6, .smartDNSWanIPv6, .lanIPv6, .wanIPv6:
@@ -53,7 +53,7 @@ extension QuickConnect {
       return lhs.priority == rhs.priority
     }
 
-    static func < (lhs: QuickConnect.ConnectInfo, rhs: QuickConnect.ConnectInfo) -> Bool {
+    static func < (lhs: QuickConnector.ConnectInfo, rhs: QuickConnector.ConnectInfo) -> Bool {
       return lhs.priority < rhs.priority
     }
   }

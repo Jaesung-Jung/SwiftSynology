@@ -1,5 +1,5 @@
 //
-//  QuickConnect+ServerInfoParameter.swift
+//  QuickConnector+ServerInfoParameter.swift
 //
 //  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
@@ -21,7 +21,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-extension QuickConnect {
+extension QuickConnector {
   struct ServerInfoParameter: Encodable {
     let id: String
     let serverID: String

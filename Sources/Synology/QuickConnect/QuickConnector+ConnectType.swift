@@ -1,5 +1,5 @@
 //
-//  QuickConnect+ConnectType.swift
+//  QuickConnector+ConnectType.swift
 //
 //  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
@@ -21,7 +21,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-extension QuickConnect {
+extension QuickConnector {
   enum ConnectType: Int, CaseIterable {
     case smartDNSLanIPv4
     case smartDNSLanIPv6

@@ -1,5 +1,5 @@
 //
-//  QuickConnect+ServerInfo.swift
+//  QuickConnector+ServerInfo.swift
 //
 //  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
@@ -23,7 +23,7 @@
 
 import Foundation
 
-extension QuickConnect {
+extension QuickConnector {
   struct ServerInfo: Decodable {
     let port: Int
     let externalPort: Int?
@@ -50,7 +50,7 @@ extension QuickConnect {
       self.smartdns = try? container.nestedContainer(keyedBy: StringCodingKey.self, forKey: "smartdns")
     }
 
-    func connectInfos(scheme: String) -> [QuickConnect.ConnectInfo] {
+    func connectInfos(scheme: String) -> [QuickConnector.ConnectInfo] {
       if hasSmartDNS {
         return [
           connectTypesForSmartDNS(scheme: scheme),
@@ -69,38 +69,38 @@ extension QuickConnect {
       }
     }
 
-    func connectTypesForSmartDNS(scheme: String) -> [QuickConnect.ConnectInfo] {
+    func connectTypesForSmartDNS(scheme: String) -> [QuickConnector.ConnectInfo] {
       guard let smartdns, scheme.lowercased() == "https" else {
         return []
       }
 
-      let ipv4: [QuickConnect.ConnectInfo]
+      let ipv4: [QuickConnector.ConnectInfo]
       if let hosts = try? smartdns.decode([String].self, forKey: "lan") {
         ipv4 = hosts.flatMap { host in
           if host.starts(with: "syn4-") {
-            return availablePorts.map { QuickConnect.ConnectInfo(type: .smartDNSWanIPv4, scheme: scheme, host: host, port: $0) }
+            return availablePorts.map { QuickConnector.ConnectInfo(type: .smartDNSWanIPv4, scheme: scheme, host: host, port: $0) }
           }
-          return [QuickConnect.ConnectInfo(type: .smartDNSLanIPv4, scheme: scheme, host: host, port: port)]
+          return [QuickConnector.ConnectInfo(type: .smartDNSLanIPv4, scheme: scheme, host: host, port: port)]
         }
       } else {
         ipv4 = []
       }
 
-      let ipv6: [QuickConnect.ConnectInfo]
+      let ipv6: [QuickConnector.ConnectInfo]
       if let hosts = try? smartdns.decode([String].self, forKey: "lanv6") {
         ipv6 = hosts.flatMap { host in
           if host.starts(with: "syn6-") {
-            return availablePorts.map { QuickConnect.ConnectInfo(type: .smartDNSWanIPv6, scheme: scheme, host: host, port: $0) }
+            return availablePorts.map { QuickConnector.ConnectInfo(type: .smartDNSWanIPv6, scheme: scheme, host: host, port: $0) }
           }
-          return [QuickConnect.ConnectInfo(type: .smartDNSLanIPv6, scheme: scheme, host: host, port: port)]
+          return [QuickConnector.ConnectInfo(type: .smartDNSLanIPv6, scheme: scheme, host: host, port: port)]
         }
       } else {
         ipv6 = []
       }
 
-      let hosts: [QuickConnect.ConnectInfo]
+      let hosts: [QuickConnector.ConnectInfo]
       if let host = try? smartdns.decode(String.self, forKey: "host") {
-        hosts = availablePorts.map { QuickConnect.ConnectInfo(type: .smartDNSHost, scheme: scheme, host: host, port: $0) }
+        hosts = availablePorts.map { QuickConnector.ConnectInfo(type: .smartDNSHost, scheme: scheme, host: host, port: $0) }
       } else {
         hosts = []
       }
@@ -108,55 +108,55 @@ extension QuickConnect {
       return [ipv4, ipv6, hosts].flatMap { $0 }
     }
 
-    func connectTypesForDDNS(scheme: String) -> [QuickConnect.ConnectInfo] {
+    func connectTypesForDDNS(scheme: String) -> [QuickConnector.ConnectInfo] {
       guard let ddns = try? server.decode(String.self, forKey: "ddns"), ddns != "NULL" else {
         return []
       }
-      return availablePorts.map { QuickConnect.ConnectInfo(type: .ddns, scheme: scheme, host: ddns, port: $0) }
+      return availablePorts.map { QuickConnector.ConnectInfo(type: .ddns, scheme: scheme, host: ddns, port: $0) }
     }
 
-    func connectTypesForFQDN(scheme: String) -> [QuickConnect.ConnectInfo] {
+    func connectTypesForFQDN(scheme: String) -> [QuickConnector.ConnectInfo] {
       guard let fqdn = try? server.decode(String.self, forKey: "fqdn"), fqdn != "NULL" else {
         return []
       }
-      return availablePorts.map { QuickConnect.ConnectInfo(type: .fqdn, scheme: scheme, host: fqdn, port: $0) }
+      return availablePorts.map { QuickConnector.ConnectInfo(type: .fqdn, scheme: scheme, host: fqdn, port: $0) }
     }
 
-    func connectTypesForExternalIP(scheme: String) -> [QuickConnect.ConnectInfo] {
+    func connectTypesForExternalIP(scheme: String) -> [QuickConnector.ConnectInfo] {
       guard let external = try? server.nestedContainer(keyedBy: StringCodingKey.self, forKey: "external") else {
         return []
       }
       guard let ip = try? external.decode(String.self, forKey: "ip"), ip != "NULL" else {
         return []
       }
-      return availablePorts.map { QuickConnect.ConnectInfo(type: .wanIPv4, scheme: scheme, host: ip, port: $0) }
+      return availablePorts.map { QuickConnector.ConnectInfo(type: .wanIPv4, scheme: scheme, host: ip, port: $0) }
     }
 
-    func connectTypesForInternalIP(scheme: String) -> [QuickConnect.ConnectInfo] {
+    func connectTypesForInternalIP(scheme: String) -> [QuickConnector.ConnectInfo] {
       guard let interfaces = try? server.nestedUnkeyedContainer(forKey: "interface").nestedContainers(keyedBy: StringCodingKey.self) else {
         return []
       }
       return interfaces.flatMap { interface in
-        let ipv6: [QuickConnect.ConnectInfo]
+        let ipv6: [QuickConnector.ConnectInfo]
         if let containers = try? interface.nestedUnkeyedContainer(forKey: "ipv6").nestedContainers(keyedBy: StringCodingKey.self) {
-          ipv6 = containers.flatMap { container -> [QuickConnect.ConnectInfo] in
+          ipv6 = containers.flatMap { container -> [QuickConnector.ConnectInfo] in
             guard let address = try? container.decode(String.self, forKey: "address") else {
               return []
             }
             if let scope = try? container.decode(String.self, forKey: "scope"), scope == "link" {
-              return [QuickConnect.ConnectInfo(type: .lanIPv6, scheme: scheme, host: address, port: port)]
+              return [QuickConnector.ConnectInfo(type: .lanIPv6, scheme: scheme, host: address, port: port)]
             }
-            return availablePorts.map { QuickConnect.ConnectInfo(type: .wanIPv4, scheme: scheme, host: address, port: $0) }
+            return availablePorts.map { QuickConnector.ConnectInfo(type: .wanIPv4, scheme: scheme, host: address, port: $0) }
           }
         } else {
           ipv6 = []
         }
 
-        let ipv4: [QuickConnect.ConnectInfo]
+        let ipv4: [QuickConnector.ConnectInfo]
         if let ip = try? interface.decode(String.self, forKey: "ip") {
           ipv4 = isPrivateIP(ip)
-            ? [QuickConnect.ConnectInfo(type: .lanIPv4, scheme: scheme, host: ip, port: port)]
-            : availablePorts.map { QuickConnect.ConnectInfo(type: .wanIPv4, scheme: scheme, host: ip, port: $0) }
+            ? [QuickConnector.ConnectInfo(type: .lanIPv4, scheme: scheme, host: ip, port: port)]
+            : availablePorts.map { QuickConnector.ConnectInfo(type: .wanIPv4, scheme: scheme, host: ip, port: $0) }
         } else {
           ipv4 = []
         }

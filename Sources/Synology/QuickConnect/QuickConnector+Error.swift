@@ -1,5 +1,5 @@
 //
-//  QuickConnect+Error.swift
+//  QuickConnector+Error.swift
 //
 //  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
@@ -23,7 +23,7 @@
 
 import Foundation
 
-extension QuickConnect {
+extension QuickConnector {
   enum Error: LocalizedError {
     case availableServerNotFound
 
