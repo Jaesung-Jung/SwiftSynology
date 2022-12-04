@@ -32,13 +32,13 @@ protocol SynologyAPIClient {
   var serverURL: URL { get }
 
   var session: Session { get }
-  var authorization: Authorization? { get }
+  var authentication: Authentication? { get }
 }
 
 extension SynologyAPIClient {
   var session: Session { .shared }
 
-  var authorization: Authorization? { nil }
+  var authentication: Authentication? { nil }
 
   func request(_ api: SynologyAPI<Void>, _ apiInfoProvider: APIInfoProvider) async throws {
     let apiInfo = try await apiInfoProvider(api.name)
@@ -53,7 +53,7 @@ extension SynologyAPIClient {
   func dataRequest<Data>(_ api: SynologyAPI<Data>, apiInfo: APIInfo?) -> DataRequest {
     let version = [api.version, apiInfo?.maxVersion].compactMap { $0 }.min()
     let additionalParameters: Parameters = [
-      "_sid": authorization?.sessionID,
+      "_sid": authentication?.sessionID,
       "api": api.name,
       "method": api.method,
       "version": version.map { "\($0)" }

@@ -1,5 +1,5 @@
 //
-//  Authorization.swift
+//  Authentication.swift
 //
 //  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
@@ -21,7 +21,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-public struct Authorization: Codable, Hashable {
+public struct Authentication: Codable, Hashable {
   public let sessionID: String
   public let deviceID: String
 

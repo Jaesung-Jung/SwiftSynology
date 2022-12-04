@@ -33,7 +33,7 @@ public actor SynologyService {
   let serverURL: URL
   let keychain: Keychain
 
-  public var authorization: Authorization? { obtainAuthorization() }
+  public var authentication: Authentication? { obtainAuthentication() }
 
   public init(serverURL: URL) {
     self.serverURL = serverURL
@@ -41,8 +41,8 @@ public actor SynologyService {
     self.keychain = Keychain(server: serverURL.absoluteURL, protocolType: protocolType)
   }
 
-  public func auth() -> AuthorizationService {
-    return AuthorizationService(
+  public func auth() -> AuthenticationService {
+    return AuthenticationService(
       serverURL: serverURL,
       keychain: keychain,
       apiInfoProvider: apiInfo
@@ -53,7 +53,7 @@ public actor SynologyService {
     return SystemService(
       serverURL: serverURL,
       apiInfoProvider: apiInfo,
-      authorization: authorization
+      authentication: authentication
     )
   }
 }
@@ -69,10 +69,10 @@ extension SynologyService {
     return _apiInfo?[name]
   }
 
-  func obtainAuthorization() -> Authorization? {
+  func obtainAuthentication() -> Authentication? {
     guard let sessionID = keychain["sessionID"], let deviceID = keychain["deviceID"] else {
       return nil
     }
-    return Authorization(sessionID: sessionID, deviceID: deviceID)
+    return Authentication(sessionID: sessionID, deviceID: deviceID)
   }
 }

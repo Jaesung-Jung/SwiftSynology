@@ -1,5 +1,5 @@
 //
-//  AuthorizationProvider.swift
+//  AuthenticationService.swift
 //
 //  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
@@ -24,8 +24,8 @@
 import Foundation
 import KeychainAccess
 
-public struct AuthorizationService: SynologyAPIClient {
-  typealias Error = AuthorizationError
+public struct AuthenticationService: SynologyAPIClient {
+  typealias Error = AuthenticationError
 
   let serverURL: URL
   let keychain: Keychain
@@ -37,8 +37,8 @@ public struct AuthorizationService: SynologyAPIClient {
     self.apiInfoProvider = apiInfoProvider
   }
 
-  public func login(account: String, password: String, deviceName: String? = nil, otp: String? = nil) async throws -> Authorization {
-    let api = SynologyAPI<Authorization>(
+  public func login(account: String, password: String, deviceName: String? = nil, otp: String? = nil) async throws -> Authentication {
+    let api = SynologyAPI<Authentication>(
       name: "SYNO.API.Auth",
       method: "login",
       parameters: [
@@ -51,13 +51,13 @@ public struct AuthorizationService: SynologyAPIClient {
         "enable_device_token": deviceName != nil ? "yes" : "no"
       ]
     )
-    let authorization = try await request(api, apiInfoProvider).data()
-    saveAuthorization(authorization)
-    return authorization
+    let authentication = try await request(api, apiInfoProvider).data()
+    saveAuthentication(authentication)
+    return authentication
   }
 
-  public func login(account: String, password: String, deviceName: String, deviceID: String) async throws -> Authorization {
-    let api = SynologyAPI<Authorization>(
+  public func login(account: String, password: String, deviceName: String, deviceID: String) async throws -> Authentication {
+    let api = SynologyAPI<Authentication>(
       name: "SYNO.API.Auth",
       method: "login",
       parameters: [
@@ -71,20 +71,20 @@ public struct AuthorizationService: SynologyAPIClient {
       ]
     )
     let authorization = try await request(api, apiInfoProvider).data()
-    saveAuthorization(authorization)
+    saveAuthentication(authorization)
     return authorization
   }
 
-  public func logout(_ authorization: Authorization) async throws {
+  public func logout(_ authentication: Authentication) async throws {
     let api = SynologyAPI<Void>(
       name: "SYNO.API.Auth",
       method: "logout",
       parameters: [
-        "_sid": authorization.sessionID
+        "_sid": authentication.sessionID
       ]
     )
     try await request(api, apiInfoProvider)
-    removeAuthorization()
+    removeAuthentication()
   }
 
   public func sendRecoveryCodeFor2FA(account: String) async throws {
@@ -99,15 +99,15 @@ public struct AuthorizationService: SynologyAPIClient {
   }
 }
 
-// MARK: - AuthorizationService (Internal)
+// MARK: - AuthenticationService (Internal)
 
-extension AuthorizationService {
-  func saveAuthorization(_ authorization: Authorization) {
-    keychain["sessionID"] = authorization.sessionID
-    keychain["deviceID"] = authorization.deviceID
+extension AuthenticationService {
+  func saveAuthentication(_ authentication: Authentication) {
+    keychain["sessionID"] = authentication.sessionID
+    keychain["deviceID"] = authentication.deviceID
   }
 
-  func removeAuthorization() {
+  func removeAuthentication() {
     keychain["sessionID"] = nil
     keychain["deviceID"] = nil
   }

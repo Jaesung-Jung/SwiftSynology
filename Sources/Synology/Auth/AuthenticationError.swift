@@ -1,5 +1,5 @@
 //
-//  AuthorizationError.swift
+//  AuthenticationError.swift
 //
 //  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
@@ -21,7 +21,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-public class AuthorizationError: SynologyError {
+public class AuthenticationError: SynologyError {
   public override var errorDescription: String? {
     switch code {
     case 400:
@@ -49,14 +49,14 @@ public class AuthorizationError: SynologyError {
     }
   }
 
-  public static let noSuchAccountOrIncorrectPassword = AuthorizationError(code: 400)
-  public static let disabledAccount = AuthorizationError(code: 401)
-  public static let permissionDenied = AuthorizationError(code: 402)
-  public static let requiredTwoFactorAuthenticationCode = AuthorizationError(code: 403)
-  public static let incorrectTwoFactorAuthenticationCode = AuthorizationError(code: 404)
-  public static let enforceTwoFactorAuthenticationCode = AuthorizationError(code: 406)
-  public static let blockedIPSource = AuthorizationError(code: 407)
-  public static let expiredPasswordCanNotChanged = AuthorizationError(code: 408)
-  public static let expiredPassword = AuthorizationError(code: 409)
-  public static let passwordMustBeChanged = AuthorizationError(code: 410)
+  public static let noSuchAccountOrIncorrectPassword = AuthenticationError(code: 400)
+  public static let disabledAccount = AuthenticationError(code: 401)
+  public static let permissionDenied = AuthenticationError(code: 402)
+  public static let requiredTwoFactorAuthenticationCode = AuthenticationError(code: 403)
+  public static let incorrectTwoFactorAuthenticationCode = AuthenticationError(code: 404)
+  public static let enforceTwoFactorAuthenticationCode = AuthenticationError(code: 406)
+  public static let blockedIPSource = AuthenticationError(code: 407)
+  public static let expiredPasswordCanNotChanged = AuthenticationError(code: 408)
+  public static let expiredPassword = AuthenticationError(code: 409)
+  public static let passwordMustBeChanged = AuthenticationError(code: 410)
 }

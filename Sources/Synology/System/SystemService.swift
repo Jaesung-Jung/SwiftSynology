@@ -28,7 +28,7 @@ public struct SystemService: SynologyAPIClient {
 
   let serverURL: URL
   let apiInfoProvider: APIInfoProvider
-  let authorization: Authorization?
+  let authentication: Authentication?
 
   public func currentConnections() async throws -> [System.Connection] {
     let api = SynologyAPI<[System.Connection]>(
