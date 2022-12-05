@@ -30,10 +30,10 @@ import KeychainAccess
 public actor SynologyService {
   private var _apiInfo: [String: APIInfo]?
 
-  let serverURL: URL
+  public nonisolated let serverURL: URL
   let keychain: Keychain
 
-  public var authentication: Authentication? { obtainAuthentication() }
+  public nonisolated var authentication: Authentication? { obtainAuthentication() }
 
   public init(serverURL: URL) {
     self.serverURL = serverURL
@@ -41,7 +41,7 @@ public actor SynologyService {
     self.keychain = Keychain(server: serverURL.absoluteURL, protocolType: protocolType)
   }
 
-  public func auth() -> AuthenticationService {
+  public nonisolated func auth() -> AuthenticationService {
     return AuthenticationService(
       serverURL: serverURL,
       keychain: keychain,
@@ -49,7 +49,7 @@ public actor SynologyService {
     )
   }
 
-  public func system() -> SystemService {
+  public nonisolated func system() -> SystemService {
     return SystemService(
       serverURL: serverURL,
       apiInfoProvider: apiInfo,
@@ -69,7 +69,7 @@ extension SynologyService {
     return _apiInfo?[name]
   }
 
-  func obtainAuthentication() -> Authentication? {
+  nonisolated func obtainAuthentication() -> Authentication? {
     guard let sessionID = keychain["sessionID"], let deviceID = keychain["deviceID"] else {
       return nil
     }
