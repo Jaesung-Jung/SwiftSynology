@@ -51,7 +51,7 @@ public struct AuthenticationService: SynologyAPIClient {
         "enable_device_token": deviceName != nil ? "yes" : "no"
       ]
     )
-    let authentication = try await request(api, apiInfoProvider).data()
+    let authentication = try await request(api).data()
     saveAuthentication(authentication)
     return authentication
   }
@@ -70,7 +70,7 @@ public struct AuthenticationService: SynologyAPIClient {
         "enable_device_token": "yes"
       ]
     )
-    let authorization = try await request(api, apiInfoProvider).data()
+    let authorization = try await request(api).data()
     saveAuthentication(authorization)
     return authorization
   }
@@ -83,7 +83,7 @@ public struct AuthenticationService: SynologyAPIClient {
         "_sid": authentication.sessionID
       ]
     )
-    try await request(api, apiInfoProvider)
+    try await request(api)
     removeAuthentication()
   }
 
@@ -95,7 +95,7 @@ public struct AuthenticationService: SynologyAPIClient {
         "username": account
       ]
     )
-    try await request(api, apiInfoProvider)
+    try await request(api)
   }
 }
 

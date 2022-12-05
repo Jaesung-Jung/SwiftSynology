@@ -30,6 +30,7 @@ protocol SynologyAPIClient {
   associatedtype Error: SynologyError
 
   var serverURL: URL { get }
+  var apiInfoProvider: APIInfoProvider { get }
 
   var session: Session { get }
   var authentication: Authentication? { get }
@@ -40,12 +41,12 @@ extension SynologyAPIClient {
 
   var authentication: Authentication? { nil }
 
-  func request(_ api: SynologyAPI<Void>, _ apiInfoProvider: APIInfoProvider) async throws {
+  func request(_ api: SynologyAPI<Void>) async throws {
     let apiInfo = try await apiInfoProvider(api.name)
     _ = try await dataRequest(api, apiInfo: apiInfo).serializingDecodable(SynologyEmptyResponse<Error>.self).value
   }
 
-  func request<Data: Decodable>(_ api: SynologyAPI<Data>, _ apiInfoProvider: APIInfoProvider) async throws -> SynologyResponse<Data, Error> {
+  func request<Data: Decodable>(_ api: SynologyAPI<Data>) async throws -> SynologyResponse<Data, Error> {
     let apiInfo = try await apiInfoProvider(api.name)
     return try await dataRequest(api, apiInfo: apiInfo).serializingDecodable(SynologyResponse<Data, Error>.self).value
   }

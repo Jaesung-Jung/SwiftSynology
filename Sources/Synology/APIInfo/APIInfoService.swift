@@ -27,6 +27,7 @@ public struct APIInfoService: SynologyAPIClient {
   typealias Error = SynologyError
 
   let serverURL: URL
+  var apiInfoProvider: APIInfoProvider = { _ in nil }
 
   public init(serverURL: URL) {
     self.serverURL = serverURL
@@ -41,6 +42,6 @@ public struct APIInfoService: SynologyAPIClient {
         "query": "all"
       ]
     )
-    return try await request(api, { _ in nil }).data()
+    return try await request(api).data()
   }
 }
