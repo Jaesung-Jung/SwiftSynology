@@ -30,8 +30,9 @@ import KeychainAccess
 public actor SynologyService {
   private var _apiInfo: [String: APIInfo]?
 
-  public nonisolated let serverURL: URL
   let keychain: Keychain
+
+  public nonisolated let serverURL: URL
 
   public nonisolated var authentication: Authentication? { obtainAuthentication() }
 
@@ -51,6 +52,14 @@ public actor SynologyService {
 
   public nonisolated func system() -> SystemService {
     return SystemService(
+      serverURL: serverURL,
+      apiInfoProvider: apiInfo,
+      authentication: authentication
+    )
+  }
+
+  public nonisolated func fileStation() -> FileStationService {
+    return FileStationService(
       serverURL: serverURL,
       apiInfoProvider: apiInfo,
       authentication: authentication

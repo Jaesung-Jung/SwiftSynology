@@ -28,11 +28,19 @@ public enum System {
 
 extension System {
   public struct Connection: Decodable {
-    let pid: Int
-    let from: String
-    let type: String
-    let who: String
-    let desc: String
+    public let pid: Int
+    public let from: String
+    public let type: String
+    public let who: String
+    public let desc: String
+
+    public init(pid: Int, from: String, type: String, who: String, desc: String) {
+      self.pid = pid
+      self.from = from
+      self.type = type
+      self.who = who
+      self.desc = desc
+    }
 
     enum CodingKeys: String, CodingKey {
       case pid
@@ -48,13 +56,22 @@ extension System {
 
 extension System {
   public struct Process: Decodable {
-    let pid: Int
-    let command: String
-    let cpu: Int
-    let memory: UInt
-    let sharedMemory: UInt
-    let status: String
-    var isRunning: Bool { status == "R" }
+    public let pid: Int
+    public let command: String
+    public let cpu: Int
+    public let memory: UInt
+    public let sharedMemory: UInt
+    public let status: String
+    public var isRunning: Bool { status == "R" }
+
+    public init(pid: Int, command: String, cpu: Int, memory: UInt, sharedMemory: UInt, status: String) {
+      self.pid = pid
+      self.command = command
+      self.cpu = cpu
+      self.memory = memory
+      self.sharedMemory = sharedMemory
+      self.status = status
+    }
 
     enum CodingKeys: String, CodingKey {
       case pid
@@ -63,6 +80,39 @@ extension System {
       case memory = "mem"
       case sharedMemory = "mem_shared"
       case status
+    }
+  }
+}
+
+// MARK: - System.VolumeInfo
+
+extension System {
+  public struct VolumeInfo: Decodable, Hashable {
+    public let identifier: String
+    public let name: String
+    public let type: String
+    public let status: String
+    public let usedSpace: Int64
+    public let totalSpace: Int64
+    public var freeSpace: Int64 { totalSpace - usedSpace }
+
+    public init(identifier: String, name: String, type: String, status: String, usedSpace: Int64, totalSpace: Int64) {
+      self.identifier = identifier
+      self.name = name
+      self.type = type
+      self.status = status
+      self.usedSpace = usedSpace
+      self.totalSpace = totalSpace
+    }
+
+    public init(from decoder: Decoder) throws {
+      let container = try decoder.container(keyedBy: StringCodingKey.self)
+      self.identifier = try container.decode(String.self, forKey: "volume")
+      self.name = try container.decode(String.self, forKey: "name").replacingOccurrences(of: "_", with: " ").capitalized
+      self.type = try container.decode(String.self, forKey: "vol_desc")
+      self.status = try container.decode(String.self, forKey: "status")
+      self.usedSpace = Int64(try container.decode(String.self, forKey: "used_size")) ?? 0
+      self.totalSpace = Int64(try container.decode(String.self, forKey: "total_size")) ?? 0
     }
   }
 }

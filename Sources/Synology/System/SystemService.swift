@@ -30,6 +30,15 @@ public struct SystemService: SynologyAPIClient {
   let apiInfoProvider: APIInfoProvider
   let authentication: Authentication?
 
+  public func info() async throws -> String {
+    let api = SynologyAPI<String>(
+      name: "SYNO.Core.System",
+      method: "info"
+    )
+    //[{"api":"SYNO.Core.System","method":"info","version":3},{"api":"SYNO.Core.QuickConnect","method":"get","version":2},{"api":"SYNO.Core.Hardware.FanSpeed","method":"get","version":1}]
+    return try await request(api).data()
+  }
+
   public func currentConnections() async throws -> [System.Connection] {
     let api = SynologyAPI<[System.Connection]>(
       name: "SYNO.Core.CurrentConnection",
@@ -44,5 +53,14 @@ public struct SystemService: SynologyAPIClient {
       method: "list"
     )
     return try await request(api).data(path: "process")
+  }
+
+  public func volumeInfo() async throws -> [System.VolumeInfo] {
+    let api = SynologyAPI<[System.VolumeInfo]>(
+      name: "SYNO.Core.System",
+      method: "info",
+      parameters: ["type": "storage"]
+    )
+    return try await request(api).data(path: "vol_info")
   }
 }
