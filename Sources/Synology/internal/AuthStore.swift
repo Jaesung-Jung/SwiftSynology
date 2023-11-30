@@ -1,5 +1,5 @@
 //
-//  APIInfo.swift
+//  AuthStore.swift
 //
 //  Copyright © 2023 Jaesung Jung. All rights reserved.
 //
@@ -22,46 +22,32 @@
 //  THE SOFTWARE.
 
 import Foundation
-import Alamofire
+import KeychainAccess
 
-// MARK: - APIInfo
+// MARK: - AuthStore
 
-public actor APIInfo: DSRequestable {
-  typealias Failure = DiskStationError
+actor AuthStore {
+  private(set) var sessionID: String?
+  private(set) var deviceID: String?
 
-  let serverURL: URL
-  let session: Session
-  var sessionID: String? { nil }
-  var items: [String: Item]?
+  let keychain: Keychain
 
-  init(serverURL: URL, session: Session) {
-    self.serverURL = serverURL
-    self.session = session
+  init(serverURL: URL) {
+    let protocolType: ProtocolType = serverURL.scheme?.lowercased() == "https" ? .https : .http
+    let keychain = Keychain(server: serverURL.absoluteURL, protocolType: protocolType)
+//    self.sessionID = keychain["sessionID"]
+    self.sessionID = "K3hlF9jnfx6dgo4O5Sbm7yeVJy_m0WVn9Av4NSyllD43SbKMInLgjOv9Z-k0-AMVmzmwoMGqFJ1EH2a1kToHo0"
+    self.deviceID = keychain["deviceID"]
+    self.keychain = keychain
   }
 
-  public func item(for name: String) async throws -> Item? {
-    if let items {
-      return items[name]
-    }
-    let api = DiskStationAPI<[String: Item]>(
-      name: "SYNO.API.Info",
-      method: "Query",
-      preferredVersion: 1,
-      parameters: [
-        "query": "all"
-      ]
-    )
-    items = try await dataTask(api).data()
-    return items?[name]
+  func setSessionID(_ sessionID: String?) {
+    self.sessionID = sessionID
+    self.keychain["sessionID"] = sessionID
   }
-}
 
-// MARK: - APIInfo.Item
-
-extension APIInfo {
-  public struct Item: Decodable {
-    let path: String
-    let minVersion: Int
-    let maxVersion: Int
+  func setDeviceID(_ deviceID: String?) {
+    self.deviceID = deviceID
+    self.keychain["deviceID"] = deviceID
   }
 }

@@ -1,5 +1,5 @@
 //
-//  APIInfo.swift
+//  PingPong.swift
 //
 //  Copyright © 2023 Jaesung Jung. All rights reserved.
 //
@@ -24,44 +24,43 @@
 import Foundation
 import Alamofire
 
-// MARK: - APIInfo
+// MARK: - PingPoing
 
-public actor APIInfo: DSRequestable {
-  typealias Failure = DiskStationError
-
-  let serverURL: URL
+public struct PingPoing {
   let session: Session
-  var sessionID: String? { nil }
-  var items: [String: Item]?
 
-  init(serverURL: URL, session: Session) {
-    self.serverURL = serverURL
-    self.session = session
+  public init() {
+    self.session = Session()
   }
 
-  public func item(for name: String) async throws -> Item? {
-    if let items {
-      return items[name]
-    }
-    let api = DiskStationAPI<[String: Item]>(
-      name: "SYNO.API.Info",
-      method: "Query",
-      preferredVersion: 1,
-      parameters: [
-        "query": "all"
-      ]
-    )
-    items = try await dataTask(api).data()
-    return items?[name]
+  public func ping(to url: URL) async throws -> Pong {
+    try await session
+      .request(
+        url.appendingPathComponent("webman/pingpong.cgi"),
+        parameters: ["action": "cors", "quickconnect": true]
+      )
+      .serializingDecodable(Pong.self)
+      .value
   }
 }
 
-// MARK: - APIInfo.Item
+// MARK: - PingPoing (Internal)
 
-extension APIInfo {
-  public struct Item: Decodable {
-    let path: String
-    let minVersion: Int
-    let maxVersion: Int
+extension PingPoing {
+  init(session: Session) {
+    self.session = session
+  }
+
+  func ping(to url: URLConvertible) async throws -> Pong {
+    return try await ping(to: try url.asURL())
+  }
+}
+
+// MARK: - PingPoing.Pong
+
+extension PingPoing {
+  public struct Pong: Decodable {
+    public let ezid: String
+    public let success: Bool
   }
 }

@@ -1,7 +1,7 @@
 //
 //  FileStation.swift
 //
-//  Copyright © 2022 Jaesung Jung. All rights reserved.
+//  Copyright © 2023 Jaesung Jung. All rights reserved.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,135 @@
 //  THE SOFTWARE.
 
 import Foundation
+import Alamofire
 
-public enum FileStation {
+// MARK: - FileStation
+
+public struct FileStation: DSRequestable, DSTranferable, DSPollable, AuthenticationProviding, RegionSupporting {
+  typealias Failure = FileStationError
+
+  let serverURL: URL
+  let session: Session
+  let apiInfo: APIInfo?
+  let auth: AuthStore
+  let region: Region
+
+  init(serverURL: URL, session: Session, apiInfo: APIInfo, auth: AuthStore, region: Region) {
+    self.serverURL = serverURL
+    self.session = session
+    self.apiInfo = apiInfo
+    self.auth = auth
+    self.region = region
+  }
+
+  public func info() async throws -> Info {
+    let api = DiskStationAPI<Info>(
+      name: "SYNO.FileStation.Info",
+      method: "get",
+      preferredVersion: 2
+    )
+    return try await dataTask(api).data()
+  }
+
+  public func md5(filePath: String) async throws -> BackgroundTask<MD5, Empty> {
+    return try await BackgroundTask {
+      let api = DiskStationAPI<TaskID>(
+        name: "SYNO.FileStation.MD5",
+        method: "start",
+        preferredVersion: 2,
+        parameters: [
+          "file_path": filePath
+        ]
+      )
+      return try await dataTask(api).data()
+    } status: { taskID in
+      let api = DiskStationAPI<MD5>(
+        name: "SYNO.FileStation.MD5",
+        method: "status",
+        preferredVersion: 2,
+        parameters: [
+          "taskid": taskID.id
+        ]
+      )
+      return try await backgroundDataTask(api).data()
+    } stop: { taskID in
+      let api = DiskStationAPI<Void>(
+        name: "SYNO.FileStation.MD5",
+        method: "stop",
+        preferredVersion: 2,
+        parameters: [
+          "taskid": taskID.id
+        ]
+      )
+      try await dataTask(api).result()
+    }
+  }
+
+  public func upload(to path: String, fileURL: URL, create shouldCreate: Bool = false, overwrite: Bool = false, dates: Dates? = nil) async throws -> UploadTask<Void> {
+    let api = DiskStationAPI<Void>(
+      name: "SYNO.FileStation.Upload",
+      method: "upload",
+      preferredVersion: 3,
+      parameters: .formData { version in
+        [
+          .text(path, name: "path"),
+          .text("\(shouldCreate)", name: "create_parents"),
+          .text(version > 2 ? overwrite ? "overwrite" : "skip" : "\(overwrite)", name: "overwrite"),
+          dates.map { .text("\(Int($0.created.timeIntervalSince1970 * 1000))", name: "crtime") },
+          dates.map { .text("\(Int($0.modified.timeIntervalSince1970 * 1000))", name: "mtime") },
+          dates.map { .text("\(Int($0.accessed.timeIntervalSince1970 * 1000))", name: "atime") },
+          .fileURL(fileURL, name: "file")
+        ]
+      }
+    )
+    return try await uploadTask(api, to: path, fileName: fileURL.lastPathComponent)
+  }
+
+  public func upload(to path: String, data: Data, fileName: String, create shouldCreate: Bool = false, overwrite: Bool = false, dates: Dates? = nil) async throws -> UploadTask<Void> {
+    let api = DiskStationAPI<Void>(
+      name: "SYNO.FileStation.Upload",
+      method: "upload",
+      preferredVersion: 3,
+      parameters: .formData { version in
+        [
+          .text(path, name: "path"),
+          .text("\(shouldCreate)", name: "create_parents"),
+          .text(version > 2 ? overwrite ? "overwrite" : "skip" : "\(overwrite)", name: "overwrite"),
+          dates.map { .text("\(Int($0.created.timeIntervalSince1970 * 1000))", name: "crtime") },
+          dates.map { .text("\(Int($0.modified.timeIntervalSince1970 * 1000))", name: "mtime") },
+          dates.map { .text("\(Int($0.accessed.timeIntervalSince1970 * 1000))", name: "atime") },
+          .fileData(data, fileName: fileName, name: "file")
+        ]
+      }
+    )
+    return try await uploadTask(api, to: path, fileName: fileName)
+  }
+
+  public func download(_ file: File) async throws -> DownloadTask<URL> {
+    return try await download(at: file.path)
+  }
+
+  public func download(at filePath: String) async throws -> DownloadTask<URL> {
+    let api = DiskStationAPI<URL>(
+      name: "SYNO.FileStation.Download",
+      method: "download",
+      preferredVersion: 2,
+      parameters: [
+        "path": filePath,
+        "mode": "download"
+      ]
+    )
+    let path: String
+    let name: String
+    if let index = filePath.lastIndex(of: "/") {
+      path = String(filePath[..<index])
+      name = String(filePath[filePath.index(after: index)...])
+    } else {
+      path = ""
+      name = filePath
+    }
+    return try await downloadTask(api, at: path, fileName: name)
+  }
 }
 
 // MARK: - FileStation.Info
@@ -31,185 +158,52 @@ public enum FileStation {
 extension FileStation {
   public struct Info: Decodable {
     public let hostname: String
-    public let isAdministrator: Bool
-    public let supportsSharing: Bool
-    public let supportsVirtualProtocols: [String]
-
-    public init(hostname: String, isAdministrator: Bool, supportsSharing: Bool, supportsVirtualProtocols: [String]) {
-      self.hostname = hostname
-      self.isAdministrator = isAdministrator
-      self.supportsSharing = supportsSharing
-      self.supportsVirtualProtocols = supportsVirtualProtocols
-    }
+    public let isManager: Bool
+    public let supportFileRequest: Bool
+    public let supportFileSharing: Bool
+    public let supportVirtualProtocols: [String]
+    public let systemCodepage: String
 
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
       self.hostname = try container.decode(String.self, forKey: "hostname")
-      self.isAdministrator = try container.decode(Bool.self, forKey: "is_manager")
-      self.supportsSharing = try container.decode(Bool.self, forKey: "support_sharing")
-      self.supportsVirtualProtocols = try container.decode(String.self, forKey: "support_virtual_protocol")
-        .split(separator: ",")
-        .map { $0.trimmingCharacters(in: .whitespaces) }
+      self.isManager = try container.decode(Bool.self, forKey: "is_manager")
+      self.supportFileRequest = try container.decode(Bool.self, forKey: "support_file_request")
+      self.supportFileSharing = try container.decode(Bool.self, forKey: "support_file_sharing")
+      self.supportVirtualProtocols = try container.decode([String].self, forKey: "support_virtual_protocol")
+      self.systemCodepage = try container.decode(String.self, forKey: "system_codepage")
     }
   }
 }
 
-// MARK: - FileStation.SharedFolder
+// MARK: - FileStation.Dates
 
 extension FileStation {
-  public struct SharedFolder: Decodable, Hashable {
-    public let name: String
-    public let path: String
-    public let isDirectory: Bool
-    public let isReadOnly: Bool
-    public let freeSpace: Int64
-    public let totalSpace: Int64
-    public var usesSpace: Int64 { totalSpace - freeSpace }
-    public let createdTime: Date
-    public let accessTime: Date
-    public let changeTime: Date
-    public let modifiedTime: Date
-
-    public init(name: String, path: String, isDirectory: Bool, isReadOnly: Bool, freeSpace: Int64, totalSpace: Int64, createdTime: Date, accessTime: Date, changeTime: Date, modifiedTime: Date) {
-      self.name = name
-      self.path = path
-      self.isDirectory = isDirectory
-      self.isReadOnly = isReadOnly
-      self.freeSpace = freeSpace
-      self.totalSpace = totalSpace
-      self.createdTime = createdTime
-      self.accessTime = accessTime
-      self.changeTime = changeTime
-      self.modifiedTime = modifiedTime
-    }
+  public struct Dates: Decodable, Hashable {
+    public let created: Date
+    public let modified: Date
+    public let changed: Date
+    public let accessed: Date
 
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
-      self.name = try container.decode(String.self, forKey: "name")
-      self.path = try container.decode(String.self, forKey: "path")
-      self.isDirectory = try container.decode(Bool.self, forKey: "isdir")
-
-      let additionalContainer = try container.nestedContainer(keyedBy: StringCodingKey.self, forKey: "additional")
-
-      let volumeStatusContainer = try additionalContainer.nestedContainer(keyedBy: StringCodingKey.self, forKey: "volume_status")
-      self.isReadOnly = try volumeStatusContainer.decode(Bool.self, forKey: "readonly")
-      self.freeSpace = try volumeStatusContainer.decode(Int64.self, forKey: "freespace")
-      self.totalSpace = try volumeStatusContainer.decode(Int64.self, forKey: "totalspace")
-
-      let timeContainer = try additionalContainer.nestedContainer(keyedBy: StringCodingKey.self, forKey: "time")
-      self.createdTime = Date(timeIntervalSince1970: try timeContainer.decode(TimeInterval.self, forKey: "crtime"))
-      self.accessTime = Date(timeIntervalSince1970: try timeContainer.decode(TimeInterval.self, forKey: "atime"))
-      self.changeTime = Date(timeIntervalSince1970: try timeContainer.decode(TimeInterval.self, forKey: "ctime"))
-      self.modifiedTime = Date(timeIntervalSince1970: try timeContainer.decode(TimeInterval.self, forKey: "mtime"))
+      self.accessed = Date(timeIntervalSince1970: try container.decode(TimeInterval.self, forKey: "atime"))
+      self.created = Date(timeIntervalSince1970: try container.decode(TimeInterval.self, forKey: "crtime"))
+      self.changed = Date(timeIntervalSince1970: try container.decode(TimeInterval.self, forKey: "ctime"))
+      self.modified = Date(timeIntervalSince1970: try container.decode(TimeInterval.self, forKey: "mtime"))
     }
   }
 }
 
-// MARK: - FileStation.File
+// MARK: - FileStation.MD5
 
 extension FileStation {
-  public struct File: Decodable, Hashable {
-    public let name: String
-    public let path: String
-    public let isDirectory: Bool
-    public let size: Int64
-    public let createdTime: Date
-    public let accessTime: Date
-    public let changeTime: Date
-    public let modifiedTime: Date
-
-    public init(name: String, path: String, isDirectory: Bool, size: Int64, createdTime: Date, accessTime: Date, changeTime: Date, modifiedTime: Date) {
-      self.name = name
-      self.path = path
-      self.isDirectory = isDirectory
-      self.size = size
-      self.createdTime = createdTime
-      self.accessTime = accessTime
-      self.changeTime = changeTime
-      self.modifiedTime = modifiedTime
-    }
+  public struct MD5: Decodable {
+    public let value: String
 
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
-      self.name = try container.decode(String.self, forKey: "name")
-      self.path = try container.decode(String.self, forKey: "path")
-      self.isDirectory = try container.decode(Bool.self, forKey: "isdir")
-
-      let additionalContainer = try container.nestedContainer(keyedBy: StringCodingKey.self, forKey: "additional")
-      self.size = try additionalContainer.decode(Int64.self, forKey: "size")
-
-      let timeContainer = try additionalContainer.nestedContainer(keyedBy: StringCodingKey.self, forKey: "time")
-      self.createdTime = Date(timeIntervalSince1970: try timeContainer.decode(TimeInterval.self, forKey: "crtime"))
-      self.accessTime = Date(timeIntervalSince1970: try timeContainer.decode(TimeInterval.self, forKey: "atime"))
-      self.changeTime = Date(timeIntervalSince1970: try timeContainer.decode(TimeInterval.self, forKey: "ctime"))
-      self.modifiedTime = Date(timeIntervalSince1970: try timeContainer.decode(TimeInterval.self, forKey: "mtime"))
-    }
-  }
-}
-
-// MARK: - FileStation.SortDescriptor
-
-extension FileStation {
-  public struct SortDescriptor {
-    let by: By
-    let order: Order
-
-    init(by: By, order: Order = .forward) {
-      self.by = by
-      self.order = order
-    }
-
-    public static func name(_ order: Order = .forward) -> SortDescriptor {
-      return SortDescriptor(by: .name, order: order)
-    }
-
-    public static func size(_ order: Order = .forward) -> SortDescriptor {
-      return SortDescriptor(by: .size, order: order)
-    }
-
-    public static func user(_ order: Order = .forward) -> SortDescriptor {
-      return SortDescriptor(by: .user, order: order)
-    }
-
-    public static func group(_ order: Order = .forward) -> SortDescriptor {
-      return SortDescriptor(by: .group, order: order)
-    }
-
-    public static func createdTime(_ order: Order = .forward) -> SortDescriptor {
-      return SortDescriptor(by: .createdTime, order: order)
-    }
-
-    public static func accessTime(_ order: Order = .forward) -> SortDescriptor {
-      return SortDescriptor(by: .accessTime, order: order)
-    }
-
-    public static func changeTime(_ order: Order = .forward) -> SortDescriptor {
-      return SortDescriptor(by: .changeTime, order: order)
-    }
-
-    public static func modifiedTime(_ order: Order = .forward) -> SortDescriptor {
-      return SortDescriptor(by: .modifiedTime, order: order)
-    }
-
-    public static func fileType(_ order: Order = .forward) -> SortDescriptor {
-      return SortDescriptor(by: .fileType, order: order)
-    }
-
-    public enum By: String {
-      case name
-      case size
-      case user
-      case group
-      case createdTime = "crtime"
-      case accessTime = "atime"
-      case changeTime = "ctime"
-      case modifiedTime = "mtime"
-      case fileType = "type"
-    }
-
-    public enum Order: String {
-      case forward = "asc"
-      case reverse = "desc"
+      self.value = try container.decode(String.self, forKey: "md5")
     }
   }
 }

@@ -1,5 +1,5 @@
 //
-//  APIInfo.swift
+//  SortDescriptor.swift
 //
 //  Copyright © 2023 Jaesung Jung. All rights reserved.
 //
@@ -21,47 +21,17 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-import Foundation
-import Alamofire
+// MARK: - SortDescriptor
 
-// MARK: - APIInfo
+public struct SortDescriptor<Value: CustomStringConvertible> {
+  let direction: String
+  let value: String
 
-public actor APIInfo: DSRequestable {
-  typealias Failure = DiskStationError
-
-  let serverURL: URL
-  let session: Session
-  var sessionID: String? { nil }
-  var items: [String: Item]?
-
-  init(serverURL: URL, session: Session) {
-    self.serverURL = serverURL
-    self.session = session
+  public func ascending(_ value: Value) -> SortDescriptor<Value> {
+    return SortDescriptor(direction: "asc", value: value.description)
   }
 
-  public func item(for name: String) async throws -> Item? {
-    if let items {
-      return items[name]
-    }
-    let api = DiskStationAPI<[String: Item]>(
-      name: "SYNO.API.Info",
-      method: "Query",
-      preferredVersion: 1,
-      parameters: [
-        "query": "all"
-      ]
-    )
-    items = try await dataTask(api).data()
-    return items?[name]
-  }
-}
-
-// MARK: - APIInfo.Item
-
-extension APIInfo {
-  public struct Item: Decodable {
-    let path: String
-    let minVersion: Int
-    let maxVersion: Int
+  public func descending(_ value: Value) -> SortDescriptor<Value> {
+    return SortDescriptor(direction: "desc", value: value.description)
   }
 }

@@ -1,5 +1,5 @@
 //
-//  APIInfo.swift
+//  Page.swift
 //
 //  Copyright © 2023 Jaesung Jung. All rights reserved.
 //
@@ -21,47 +21,18 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-import Foundation
-import Alamofire
+// MARK: - Page
 
-// MARK: - APIInfo
+public struct Page<Element: Decodable> {
+  public let offset: Int
+  public let totalCount: Int
+  public let elements: [Element]
 
-public actor APIInfo: DSRequestable {
-  typealias Failure = DiskStationError
+  public var isAtEnd: Bool { elements.count >= totalCount }
 
-  let serverURL: URL
-  let session: Session
-  var sessionID: String? { nil }
-  var items: [String: Item]?
-
-  init(serverURL: URL, session: Session) {
-    self.serverURL = serverURL
-    self.session = session
-  }
-
-  public func item(for name: String) async throws -> Item? {
-    if let items {
-      return items[name]
-    }
-    let api = DiskStationAPI<[String: Item]>(
-      name: "SYNO.API.Info",
-      method: "Query",
-      preferredVersion: 1,
-      parameters: [
-        "query": "all"
-      ]
-    )
-    items = try await dataTask(api).data()
-    return items?[name]
-  }
-}
-
-// MARK: - APIInfo.Item
-
-extension APIInfo {
-  public struct Item: Decodable {
-    let path: String
-    let minVersion: Int
-    let maxVersion: Int
+  public init(offset: Int, totalCount: Int, elements: [Element]) {
+    self.offset = offset
+    self.totalCount = totalCount
+    self.elements = elements
   }
 }

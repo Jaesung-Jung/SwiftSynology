@@ -1,5 +1,5 @@
 //
-//  APIInfo.swift
+//  QuickConnectError.swift
 //
 //  Copyright © 2023 Jaesung Jung. All rights reserved.
 //
@@ -22,46 +22,14 @@
 //  THE SOFTWARE.
 
 import Foundation
-import Alamofire
 
-// MARK: - APIInfo
+public enum QuickConnectError: LocalizedError {
+  case availableServerNotFound
 
-public actor APIInfo: DSRequestable {
-  typealias Failure = DiskStationError
-
-  let serverURL: URL
-  let session: Session
-  var sessionID: String? { nil }
-  var items: [String: Item]?
-
-  init(serverURL: URL, session: Session) {
-    self.serverURL = serverURL
-    self.session = session
-  }
-
-  public func item(for name: String) async throws -> Item? {
-    if let items {
-      return items[name]
+  public var errorDescription: String? {
+    switch self {
+    case .availableServerNotFound:
+      return "Available server not found"
     }
-    let api = DiskStationAPI<[String: Item]>(
-      name: "SYNO.API.Info",
-      method: "Query",
-      preferredVersion: 1,
-      parameters: [
-        "query": "all"
-      ]
-    )
-    items = try await dataTask(api).data()
-    return items?[name]
-  }
-}
-
-// MARK: - APIInfo.Item
-
-extension APIInfo {
-  public struct Item: Decodable {
-    let path: String
-    let minVersion: Int
-    let maxVersion: Int
   }
 }

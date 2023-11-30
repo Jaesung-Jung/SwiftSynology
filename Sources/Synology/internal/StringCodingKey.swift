@@ -1,7 +1,7 @@
 //
-//  APIInfo.swift
+//  StringCodingKey.swift
 //
-//  Copyright © 2023 Jaesung Jung. All rights reserved.
+//  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -21,47 +21,32 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-import Foundation
-import Alamofire
+// MARK: - StringCodingKey
 
-// MARK: - APIInfo
+struct StringCodingKey: CodingKey {
+  let stringValue: String
+  let intValue: Int?
 
-public actor APIInfo: DSRequestable {
-  typealias Failure = DiskStationError
-
-  let serverURL: URL
-  let session: Session
-  var sessionID: String? { nil }
-  var items: [String: Item]?
-
-  init(serverURL: URL, session: Session) {
-    self.serverURL = serverURL
-    self.session = session
+  init?(stringValue: String) {
+    self.stringValue = stringValue
+    self.intValue = Int(stringValue)
   }
 
-  public func item(for name: String) async throws -> Item? {
-    if let items {
-      return items[name]
-    }
-    let api = DiskStationAPI<[String: Item]>(
-      name: "SYNO.API.Info",
-      method: "Query",
-      preferredVersion: 1,
-      parameters: [
-        "query": "all"
-      ]
-    )
-    items = try await dataTask(api).data()
-    return items?[name]
+  init?(intValue: Int) {
+    self.intValue = intValue
+    self.stringValue = "\(intValue)"
+  }
+
+  init?<S: StringProtocol>(_ string: S) {
+    self.init(stringValue: String(string))
   }
 }
 
-// MARK: - APIInfo.Item
+// MARK: - StringCodingKey (ExpressibleByStringLiteral)
 
-extension APIInfo {
-  public struct Item: Decodable {
-    let path: String
-    let minVersion: Int
-    let maxVersion: Int
+extension StringCodingKey: ExpressibleByStringLiteral {
+  init(stringLiteral: StringLiteralType) {
+    self.stringValue = stringLiteral
+    self.intValue = Int(stringLiteral)
   }
 }

@@ -1,7 +1,7 @@
 //
-//  APIInfo.swift
+//  SessionEventLogger.swift
 //
-//  Copyright © 2023 Jaesung Jung. All rights reserved.
+//  Copyright © 2022 Jaesung Jung. All rights reserved.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -23,45 +23,42 @@
 
 import Foundation
 import Alamofire
+#if canImport(OSLog)
+import OSLog
+#endif
 
-// MARK: - APIInfo
+// MARK: - SessionEventLogger
 
-public actor APIInfo: DSRequestable {
-  typealias Failure = DiskStationError
+#if DEBUG
 
-  let serverURL: URL
-  let session: Session
-  var sessionID: String? { nil }
-  var items: [String: Item]?
+struct SessionEventLogger: EventMonitor {
+  let printLog: (String...) -> Void
 
-  init(serverURL: URL, session: Session) {
-    self.serverURL = serverURL
-    self.session = session
-  }
-
-  public func item(for name: String) async throws -> Item? {
-    if let items {
-      return items[name]
+  init() {
+    if #available(iOS 14.0, macCatalyst 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, visionOS 1.0, *) {
+      let logger = Logger()
+      printLog = {
+        logger.debug("\($0.joined(separator: "\n"))")
+      }
+    } else {
+      printLog = {
+        debugPrint($0)
+      }
     }
-    let api = DiskStationAPI<[String: Item]>(
-      name: "SYNO.API.Info",
-      method: "Query",
-      preferredVersion: 1,
-      parameters: [
-        "query": "all"
-      ]
+  }
+
+  func requestDidResume(_ request: Request) {
+    request.cURLDescription {
+        printLog("\($0)")
+    }
+  }
+
+  func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+    printLog(
+      dataTask.currentRequest.flatMap(\.url?.absoluteString) ?? "",
+      String(data: data, encoding: .utf8) ?? data.base64EncodedString()
     )
-    items = try await dataTask(api).data()
-    return items?[name]
   }
 }
 
-// MARK: - APIInfo.Item
-
-extension APIInfo {
-  public struct Item: Decodable {
-    let path: String
-    let minVersion: Int
-    let maxVersion: Int
-  }
-}
+#endif
