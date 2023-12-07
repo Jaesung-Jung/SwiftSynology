@@ -32,6 +32,9 @@ public struct Connection {
     return getItems()
   }
 
+  public init() {
+  }
+
   @discardableResult
   public func append(_ item: Item) -> [Item]? {
     var items = getItems()
