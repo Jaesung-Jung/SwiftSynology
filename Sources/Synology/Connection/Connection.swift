@@ -107,7 +107,7 @@ extension Connection {
 
 extension Connection {
   public struct Item: Codable, Hashable {
-    let alias: String
-    let serverURL: URL
+    public let alias: String
+    public let serverURL: URL
   }
 }

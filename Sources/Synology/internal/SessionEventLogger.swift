@@ -32,32 +32,67 @@ import OSLog
 #if DEBUG
 
 struct SessionEventLogger: EventMonitor {
-  let printLog: (String...) -> Void
+  let printLog: (String?...) -> Void
 
   init() {
+    let makeLog: ([String?]) -> String = {
+      $0.compactMap{ $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
+    }
     if #available(iOS 14.0, macCatalyst 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, visionOS 1.0, *) {
       let logger = Logger()
       printLog = {
-        logger.debug("\($0.joined(separator: "\n"))")
+        logger.debug("\(makeLog($0))")
       }
     } else {
       printLog = {
-        debugPrint($0)
+        debugPrint(makeLog($0))
       }
     }
   }
 
   func requestDidResume(_ request: Request) {
-    request.cURLDescription {
-        printLog("\($0)")
-    }
+    printLog(
+      "🌐 \(requestString(request: request))",
+      request.request.flatMap(\.httpBody).map { dataString(data: $0) }
+    )
   }
 
-  func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+  func request(_ request: DataRequest, didParseResponse response: DataResponse<Data?, AFError>) {
     printLog(
-      dataTask.currentRequest.flatMap(\.url?.absoluteString) ?? "",
-      String(data: data, encoding: .utf8) ?? data.base64EncodedString()
+      "💬 \(requestString(request: request))",
+      request.data.map { dataString(data: $0) }
     )
+  }
+
+  func request<Value>(_ request: DataRequest, didParseResponse response: DataResponse<Value, AFError>) {
+    printLog(
+      "💬 \(requestString(request: request))",
+      request.data.map { dataString(data: $0) }
+    )
+  }
+
+  @inlinable func requestString(request: Request) -> String {
+    let components = [
+      request.request?.httpMethod,
+      request.request?.url?.absoluteString,
+      request.response.map { "(\($0.statusCode))" }
+    ]
+    return components
+      .compactMap { $0 }
+      .joined(separator: " ")
+  }
+
+  @inlinable func dataString(data: Data) -> String {
+    if let string = String(data: data, encoding: .utf8) {
+      return string
+    }
+    let size: String
+    if #available(iOS 15.0, macCatalyst 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, visionOS 1.0, *) {
+      size = data.count.formatted(.byteCount(style: .memory, includesActualByteCount: true))
+    } else {
+      size = "\(data.count) bytes"
+    }
+    return "[DATA] \(size)"
   }
 }
 

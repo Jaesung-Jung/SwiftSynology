@@ -41,9 +41,8 @@ public actor Auth: DSRequestable, AuthenticationProviding {
     self.auth = auth
   }
 
-  public func login(account: String, password: String) async throws {
-    let deviceID = await auth.deviceID
-    let api = DiskStationAPI<LoginResult>(
+  public func login(account: String, password: String, deviceID: String? = nil) async throws -> Authorization {
+    let api = DiskStationAPI<Authorization>(
       name: "SYNO.API.Auth",
       method: "login",
       preferredVersion: 7,
@@ -56,12 +55,13 @@ public actor Auth: DSRequestable, AuthenticationProviding {
         "device_id": deviceID
       ]
     )
-    let result = try await dataTask(api).data()
-    await auth.setSessionID(result.sessionID)
+    let authorization = try await dataTask(api).data()
+    await auth.setSessionID(authorization.sessionID)
+    return authorization
   }
 
-  public func login(account: String, password: String, otp: OTP) async throws {
-    let api = DiskStationAPI<LoginResult>(
+  public func login(account: String, password: String, otp: OTP) async throws -> Authorization {
+    let api = DiskStationAPI<Authorization>(
       name: "SYNO.API.Auth",
       method: "login",
       preferredVersion: 7,
@@ -71,15 +71,13 @@ public actor Auth: DSRequestable, AuthenticationProviding {
         "session": "synology-swift-api",
         "format": "sid",
         "device_name": deviceName,
-        "otp_code": otp,
-        "enable_device_token": otp.trustDevice ? "yes" : "no"
+        "otp_code": otp.code,
+        "enable_device_token": otp.enableDeviceToken ? "yes" : "no"
       ]
     )
-    let result = try await dataTask(api).data()
-    await auth.setSessionID(result.sessionID)
-    if otp.trustDevice {
-      await auth.setDeviceID(result.deviceID)
-    }
+    let authorization = try await dataTask(api).data()
+    await auth.setSessionID(authorization.sessionID)
+    return authorization
   }
 
   public func logout() async throws {
@@ -98,8 +96,9 @@ public actor Auth: DSRequestable, AuthenticationProviding {
     await auth.setSessionID(nil)
   }
 
-  public func removeTrustDevice() async {
-    await auth.setDeviceID(nil)
+  public func authorized() async -> Bool {
+    let sessionID = await auth.sessionID
+    return sessionID != nil
   }
 }
 
@@ -107,19 +106,24 @@ public actor Auth: DSRequestable, AuthenticationProviding {
 
 extension Auth {
   public struct OTP {
-    let code: String
-    let trustDevice: Bool
+    public let code: String
+    public let enableDeviceToken: Bool
+
+    public init(code: String, enableDeviceToken: Bool) {
+      self.code = code
+      self.enableDeviceToken = enableDeviceToken
+    }
   }
 }
 
-// MARK: - Auth.LoginResult
+// MARK: - Auth.Authorization
 
 extension Auth {
-  struct LoginResult: Decodable, Hashable {
-    let sessionID: String
-    let deviceID: String
+  public struct Authorization: Decodable, Hashable {
+    public let sessionID: String
+    public let deviceID: String
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
       self.sessionID = try container.decode(String.self, forKey: "sid")
       self.deviceID = try container.decodeIfPresent(String.self, forKey: "device_id") ?? container.decode(String.self, forKey: "did")

@@ -35,7 +35,7 @@ extension FileStation {
         "rotate": orientation?.rawValue
       ]
     )
-    return try await dataTask(api).image
+    return try await imageTask(api)
   }
 }
 

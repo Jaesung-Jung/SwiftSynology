@@ -1,5 +1,5 @@
 //
-//  AuthStore.swift
+//  PersonalSettings.swift
 //
 //  Copyright © 2023 Jaesung Jung. All rights reserved.
 //
@@ -22,17 +22,34 @@
 //  THE SOFTWARE.
 
 import Foundation
+import Alamofire
 
-// MARK: - AuthStore
+// MARK: - PersonalSettings
 
-actor AuthStore {
-  private(set) var sessionID: String?
+public struct PersonalSettings: DSRequestable, AuthenticationProviding {
+  typealias Failure = DiskStationError
 
-  init(serverURL: URL, sessionID: String?) {
-    self.sessionID = sessionID
+  let serverURL: URL
+  let session: Session
+  let apiInfo: APIInfo?
+  let auth: AuthStore
+
+  init(serverURL: URL, session: Session, apiInfo: APIInfo?, auth: AuthStore) {
+    self.serverURL = serverURL
+    self.session = session
+    self.apiInfo = apiInfo
+    self.auth = auth
   }
 
-  func setSessionID(_ sessionID: String?) {
-    self.sessionID = sessionID
+  public func wallpaper(highQuality: Bool = true) async throws -> PlatformImage? {
+    let api = DiskStationAPI<PlatformImage>(
+      name: "SYNO.Core.PersonalSettings",
+      method: "wallpaper",
+      preferredVersion: 1,
+      parameters: [
+        "retina": highQuality ? "true" : "false"
+      ]
+    )
+    return try await imageTask(api)
   }
 }

@@ -87,9 +87,10 @@ extension DSRequestable {
     return try await session.request(makeRequest(api: api)).serializingDecodable().value
   }
 
-  func dataTask(_ api: DiskStationAPI<PlatformImage>) async throws -> DiskStationImageResponse {
-    let data = try await session.request(makeRequest(api: api)).serializingData().value
-    return DiskStationImageResponse(data: data)
+  func imageTask(_ api: DiskStationAPI<PlatformImage>) async throws -> PlatformImage? {
+    let serializer = DiskStationDataResponseSerializer<DiskStationLazyDataResponse>()
+    let serializedResponse = try await session.request(makeRequest(api: api)).serializingResponse(using: serializer).value
+    return PlatformImage(data: try serializedResponse.data)
   }
 
   func backgroundDataTask<Completed: Decodable, Processing: Decodable>(_ api: DiskStationAPI<Completed>) async throws -> DiskStationResponse<BackgroundTask<Completed, Processing>.Status, Failure> {

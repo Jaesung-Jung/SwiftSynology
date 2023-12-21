@@ -22,6 +22,7 @@
 //  THE SOFTWARE.
 
 import Foundation
+import Alamofire
 
 // MARK: - DiskStationResponse
 
@@ -95,10 +96,59 @@ struct DiskStationPageResponse<Element: Decodable, Error: DiskStationError>: Dec
   }
 }
 
-// MARK: - DiskStationImageResponse
+// MARK: - DiskStationLazyDataResponse
 
-struct DiskStationImageResponse {
-  let data: Data
+struct DiskStationLazyDataResponse<Error: DiskStationError>: DataRepresentable {
+  private struct _ErrorResponse: Decodable {
+    let error: Error
+    let success: Bool
+  }
 
-  @inlinable var image: PlatformImage? { PlatformImage(data: data) }
+  let source: Data
+
+  var data: Data {
+    get throws {
+      do {
+        let decoder = JSONDecoder()
+        let errorResponse = try decoder.decode(_ErrorResponse.self, from: source)
+        throw errorResponse.error
+      } catch is DecodingError {
+        return source
+      }
+    }
+  }
+
+  init(data: Data) {
+    self.source = data
+  }
+}
+
+// MARK: - DiskStationDataResponseSerializer
+
+final class DiskStationDataResponseSerializer<T: DataRepresentable>: ResponseSerializer {
+  let dataPreprocessor: DataPreprocessor
+  let emptyResponseCodes: Set<Int>
+  let emptyRequestMethods: Set<HTTPMethod>
+
+  init(dataPreprocessor: DataPreprocessor = DataResponseSerializer.defaultDataPreprocessor,
+       emptyResponseCodes: Set<Int> = DataResponseSerializer.defaultEmptyResponseCodes,
+       emptyRequestMethods: Set<HTTPMethod> = DataResponseSerializer.defaultEmptyRequestMethods) {
+    self.dataPreprocessor = dataPreprocessor
+    self.emptyResponseCodes = emptyResponseCodes
+    self.emptyRequestMethods = emptyRequestMethods
+  }
+
+  func serialize(request: URLRequest?, response: HTTPURLResponse?, data: Data?, error: Error?) throws -> T {
+    if let error {
+      throw error
+    }
+    guard var data else {
+      guard emptyResponseAllowed(forRequest: request, response: response) else {
+        throw AFError.responseSerializationFailed(reason: .inputDataNilOrZeroLength)
+      }
+      return T(data: Data())
+    }
+    data = try dataPreprocessor.preprocess(data)
+    return T(data: data)
+  }
 }

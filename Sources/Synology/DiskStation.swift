@@ -24,12 +24,6 @@
 import Foundation
 import Alamofire
 
-//#if canImport(AppKit)
-//public typealias Image = NSImage
-//#else
-//public typealias Image = UIImage
-//#endif
-
 #if canImport(UIKit)
 import UIKit
 public typealias PlatformImage = UIImage
@@ -48,13 +42,13 @@ public class DiskStation {
   public let apiInfo: APIInfo
   public let region: Region
 
-  public init(serverURL: URL, enableEventLog: Bool = true) {
+  public init(serverURL: URL, sessionID: String? = nil, enableEventLog: Bool = true) {
     #if DEBUG
     self.session = Session(eventMonitors: enableEventLog ? [SessionEventLogger()] : [])
     #else
     self.session = Session()
     #endif
-    self.authStore = AuthStore(serverURL: serverURL)
+    self.authStore = AuthStore(serverURL: serverURL, sessionID: sessionID)
     self.serverURL = serverURL
     self.apiInfo = APIInfo(serverURL: serverURL, session: session)
     self.region = Region(serverURL: serverURL, session: session, apiInfo: apiInfo, auth: authStore)
@@ -72,6 +66,19 @@ extension DiskStation {
 extension DiskStation {
   public func auth() -> Auth {
     return Auth(
+      serverURL: serverURL,
+      session: session,
+      apiInfo: apiInfo,
+      auth: authStore
+    )
+  }
+}
+
+// MARK: - DiskStation (PersonalSettings)
+
+extension DiskStation {
+  public func personalSettings() -> PersonalSettings {
+    return PersonalSettings(
       serverURL: serverURL,
       session: session,
       apiInfo: apiInfo,

@@ -1,5 +1,5 @@
 //
-//  AuthStore.swift
+//  DataRepresentable.swift
 //
 //  Copyright © 2023 Jaesung Jung. All rights reserved.
 //
@@ -23,16 +23,6 @@
 
 import Foundation
 
-// MARK: - AuthStore
-
-actor AuthStore {
-  private(set) var sessionID: String?
-
-  init(serverURL: URL, sessionID: String?) {
-    self.sessionID = sessionID
-  }
-
-  func setSessionID(_ sessionID: String?) {
-    self.sessionID = sessionID
-  }
+protocol DataRepresentable {
+  init(data: Data)
 }
