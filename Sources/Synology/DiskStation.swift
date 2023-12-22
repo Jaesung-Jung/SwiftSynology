@@ -74,6 +74,19 @@ extension DiskStation {
   }
 }
 
+// MARK: - DiskStation (System)
+
+extension DiskStation {
+  public func system() -> System {
+    return System(
+      serverURL: serverURL,
+      session: session,
+      apiInfo: apiInfo,
+      auth: authStore
+    )
+  }
+}
+
 // MARK: - DiskStation (PersonalSettings)
 
 extension DiskStation {
