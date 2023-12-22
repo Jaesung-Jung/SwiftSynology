@@ -164,6 +164,15 @@ extension FileStation {
     public let supportVirtualProtocols: [String]
     public let systemCodepage: String
 
+    public init(hostname: String, isManager: Bool, supportFileRequest: Bool, supportFileSharing: Bool, supportVirtualProtocols: [String], systemCodepage: String) {
+      self.hostname = hostname
+      self.isManager = isManager
+      self.supportFileRequest = supportFileRequest
+      self.supportFileSharing = supportFileSharing
+      self.supportVirtualProtocols = supportVirtualProtocols
+      self.systemCodepage = systemCodepage
+    }
+
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
       self.hostname = try container.decode(String.self, forKey: "hostname")
@@ -185,6 +194,13 @@ extension FileStation {
     public let changed: Date
     public let accessed: Date
 
+    public init(created: Date, modified: Date, changed: Date, accessed: Date) {
+      self.created = created
+      self.modified = modified
+      self.changed = changed
+      self.accessed = accessed
+    }
+
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
       self.accessed = Date(timeIntervalSince1970: try container.decode(TimeInterval.self, forKey: "atime"))
@@ -200,6 +216,10 @@ extension FileStation {
 extension FileStation {
   public struct MD5: Decodable {
     public let value: String
+
+    public init(value: String) {
+      self.value = value
+    }
 
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)

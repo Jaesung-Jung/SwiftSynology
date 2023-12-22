@@ -74,6 +74,21 @@ extension FileStation {
       return totalSpace - freeSpace
     }
 
+    public init(name: String, path: String, isDirectory: Bool, isValid: Bool, absolutePath: String?, mountPointType: String?, owner: Owner?, dates: Dates?, permission: Permission?, isReadOnly: Bool?, freeSpace: UInt64?, totalSpace: UInt64?) {
+      self.name = name
+      self.path = path
+      self.isDirectory = isDirectory
+      self.isValid = isValid
+      self.absolutePath = absolutePath
+      self.mountPointType = mountPointType
+      self.owner = owner
+      self.dates = dates
+      self.permission = permission
+      self.isReadOnly = isReadOnly
+      self.freeSpace = freeSpace
+      self.totalSpace = totalSpace
+    }
+
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
       self.name = try container.decode(String.self, forKey: "name")

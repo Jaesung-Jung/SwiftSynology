@@ -210,6 +210,19 @@ extension FileStation {
     public let permission: Permission?
     public let type: String?
 
+    public init(name: String, path: String, isDirectory: Bool, absolutePath: String?, mountPointType: String?, size: UInt64?, owner: Owner?, dates: Dates?, permission: Permission?, type: String?) {
+      self.name = name
+      self.path = path
+      self.isDirectory = isDirectory
+      self.absolutePath = absolutePath
+      self.mountPointType = mountPointType
+      self.size = size
+      self.owner = owner
+      self.dates = dates
+      self.permission = permission
+      self.type = type
+    }
+
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
       self.name = try container.decode(String.self, forKey: "name")
@@ -245,6 +258,13 @@ extension FileStation {
     public let group: String
     public let uid: Int
     public let user: String
+
+    public init(gid: Int, group: String, uid: Int, user: String) {
+      self.gid = gid
+      self.group = group
+      self.uid = uid
+      self.user = user
+    }
   }
 }
 
@@ -252,9 +272,15 @@ extension FileStation {
 
 extension FileStation {
   public struct Permission: Decodable, Hashable {
-    public let acl: FileStation.ACL
+    public let acl: ACL
     public let isACLMode: Bool
     public let posix: Int
+
+    public init(acl: FileStation.ACL, isACLMode: Bool, posix: Int) {
+      self.acl = acl
+      self.isACLMode = isACLMode
+      self.posix = posix
+    }
 
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
@@ -275,6 +301,14 @@ extension FileStation {
     public let read: Bool
     public let write: Bool
 
+    public init(append: Bool, delete: Bool, execute: Bool, read: Bool, write: Bool) {
+      self.append = append
+      self.delete = delete
+      self.execute = execute
+      self.read = read
+      self.write = write
+    }
+
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
       self.append = try container.decode(Bool.self, forKey: "append")
@@ -290,9 +324,9 @@ extension FileStation {
 
 extension FileStation {
   public struct DirectoryInfo: Decodable, Hashable {
-    let numberOfDirectories: Int
-    let numberOfFiles: Int
-    let totalSize: UInt64
+    public let numberOfDirectories: Int
+    public let numberOfFiles: Int
+    public let totalSize: UInt64
 
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
@@ -349,8 +383,13 @@ extension FileStation {
 
 extension FileStation {
   public struct NewDirectoryInfo {
-    let path: String
-    let name: String
+    public let path: String
+    public let name: String
+
+    public init(path: String, name: String) {
+      self.path = path
+      self.name = name
+    }
   }
 }
 
@@ -358,7 +397,12 @@ extension FileStation {
 
 extension FileStation {
   public struct RenameInfo {
-    let path: String
-    let name: String
+    public let path: String
+    public let name: String
+
+    public init(path: String, name: String) {
+      self.path = path
+      self.name = name
+    }
   }
 }

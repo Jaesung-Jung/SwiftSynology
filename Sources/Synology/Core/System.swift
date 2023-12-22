@@ -72,6 +72,11 @@ extension System {
 
     public let hostname: String
     public let interfaces: [Interface]
+
+    public init(hostname: String, interfaces: [Interface]) {
+      self.hostname = hostname
+      self.interfaces = interfaces
+    }
   }
 }
 
@@ -85,6 +90,14 @@ extension System {
       public let family: String
       public let series: String
       public let vendor: String
+
+      public init(clockSpeed: Int, coreCount: Int, family: String, series: String, vendor: String) {
+        self.clockSpeed = clockSpeed
+        self.coreCount = coreCount
+        self.family = family
+        self.series = series
+        self.vendor = vendor
+      }
     }
 
     public struct USB: Decodable {
@@ -94,6 +107,15 @@ extension System {
       public let product: String
       public let rev: String
       public let vid: String
+
+      public init(cls: String, pid: String, vendor: String, product: String, rev: String, vid: String) {
+        self.cls = cls
+        self.pid = pid
+        self.vendor = vendor
+        self.product = product
+        self.rev = rev
+        self.vid = vid
+      }
 
       public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: StringCodingKey.self)
@@ -121,6 +143,21 @@ extension System {
 
     public let upTime: TimeInterval
     public let usbDevices: [USB]
+
+    public init(model: String, serial: String, cpu: CPU, ram: Int, firmwareVersion: String, supportsESATA: Bool, ntpEnabled: Bool, ntpServer: String, temperature: Int, temperatureWarning: Bool, upTime: TimeInterval, usbDevices: [USB]) {
+      self.model = model
+      self.serial = serial
+      self.cpu = cpu
+      self.ram = ram
+      self.firmwareVersion = firmwareVersion
+      self.supportsESATA = supportsESATA
+      self.ntpEnabled = ntpEnabled
+      self.ntpServer = ntpServer
+      self.temperature = temperature
+      self.temperatureWarning = temperatureWarning
+      self.upTime = upTime
+      self.usbDevices = usbDevices
+    }
 
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)

@@ -176,6 +176,20 @@ extension FileStation {
         .flatMap { PlatformImage(data: $0) }
     }
 
+    public init(id: String, url: URL, qrcode: String, name: String, path: String, isDirectory: Bool, status: Status, hasPassword: Bool, owner: String, availableDate: Date, expiredDate: Date) {
+      self.id = id
+      self.url = url
+      self.qrcode = qrcode
+      self.name = name
+      self.path = path
+      self.isDirectory = isDirectory
+      self.status = status
+      self.hasPassword = hasPassword
+      self.owner = owner
+      self.availableDate = availableDate
+      self.expiredDate = expiredDate
+    }
+
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
       self.id = try container.decode(String.self, forKey: "id")
