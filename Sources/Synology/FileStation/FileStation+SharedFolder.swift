@@ -40,8 +40,8 @@ extension FileStation {
         "limit": limit,
         "sort_by": sortDescriptor?.value,
         "sort_direction": sortDescriptor?.direction,
-        "additional": additionalInfo?.map(\.rawValue).joined(separator: ",").map { "[\($0)]" },
-        "onlywritable": onlyWritable
+        "additional": additionalInfo.map { "[\($0.map { #""\#($0.rawValue)""# }.joined(separator: ","))]" },
+        "onlywritable": "\(onlyWritable)"
       ]
     )
     return try await dataTask(api).elements(path: "shares")
@@ -55,7 +55,6 @@ extension FileStation {
     public let name: String
     public let path: String
     public let isDirectory: Bool
-    public let isValid: Bool
 
     // Additional info
     public let absolutePath: String?
@@ -74,11 +73,10 @@ extension FileStation {
       return totalSpace - freeSpace
     }
 
-    public init(name: String, path: String, isDirectory: Bool, isValid: Bool, absolutePath: String?, mountPointType: String?, owner: Owner?, dates: Dates?, permission: Permission?, isReadOnly: Bool?, freeSpace: UInt64?, totalSpace: UInt64?) {
+    public init(name: String, path: String, isDirectory: Bool, absolutePath: String?, mountPointType: String?, owner: Owner?, dates: Dates?, permission: Permission?, isReadOnly: Bool?, freeSpace: UInt64?, totalSpace: UInt64?) {
       self.name = name
       self.path = path
       self.isDirectory = isDirectory
-      self.isValid = isValid
       self.absolutePath = absolutePath
       self.mountPointType = mountPointType
       self.owner = owner
@@ -94,7 +92,6 @@ extension FileStation {
       self.name = try container.decode(String.self, forKey: "name")
       self.path = try container.decode(String.self, forKey: "path")
       self.isDirectory = try container.decode(Bool.self, forKey: "isdir")
-      self.isValid = try container.decodeIfPresent(String.self, forKey: "status_filter").map { $0.lowercased() == "valid" } ?? true
 
       if let additional = try? container.nestedContainer(keyedBy: StringCodingKey.self, forKey: "additional") {
         self.absolutePath = try additional.decodeIfPresent(String.self, forKey: "real_path")
@@ -103,7 +100,7 @@ extension FileStation {
         self.dates = try additional.decodeIfPresent(Dates.self, forKey: "time")
         self.permission = try additional.decodeIfPresent(Permission.self, forKey: "perm")
 
-        let volume = try? container.nestedContainer(keyedBy: StringCodingKey.self, forKey: "volume_status")
+        let volume = try? additional.nestedContainer(keyedBy: StringCodingKey.self, forKey: "volume_status")
         self.isReadOnly = try volume?.decode(Bool.self, forKey: "readonly")
         self.freeSpace = try volume?.decode(UInt64.self, forKey: "freespace")
         self.totalSpace = try volume?.decode(UInt64.self, forKey: "totalspace")

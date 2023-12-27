@@ -42,7 +42,7 @@ extension FileStation {
         "limit": limit,
         "sort_by": sortDescriptor?.value,
         "sort_direction": sortDescriptor?.direction,
-        "additional": additionalInfo?.map { #""\#($0)""# }.joined(separator: ",").map { "[\($0)]" },
+        "additional": additionalInfo.map { "[\($0.map { #""\#($0.rawValue)""# }.joined(separator: ","))]" },
         "filetype": type?.rawValue
       ]
     )
@@ -200,6 +200,7 @@ extension FileStation {
     public let name: String
     public let path: String
     public let isDirectory: Bool
+    public let isValid: Bool
 
     // Additional info
     public let absolutePath: String?
@@ -210,10 +211,11 @@ extension FileStation {
     public let permission: Permission?
     public let type: String?
 
-    public init(name: String, path: String, isDirectory: Bool, absolutePath: String?, mountPointType: String?, size: UInt64?, owner: Owner?, dates: Dates?, permission: Permission?, type: String?) {
+    public init(name: String, path: String, isDirectory: Bool, isValid: Bool, absolutePath: String?, mountPointType: String?, size: UInt64?, owner: Owner?, dates: Dates?, permission: Permission?, type: String?) {
       self.name = name
       self.path = path
       self.isDirectory = isDirectory
+      self.isValid = isValid
       self.absolutePath = absolutePath
       self.mountPointType = mountPointType
       self.size = size
@@ -228,6 +230,7 @@ extension FileStation {
       self.name = try container.decode(String.self, forKey: "name")
       self.path = try container.decode(String.self, forKey: "path")
       self.isDirectory = try container.decode(Bool.self, forKey: "isdir")
+      self.isValid = try container.decodeIfPresent(String.self, forKey: "status_filter").map { $0.lowercased() == "valid" } ?? true
 
       if let additional = try? container.nestedContainer(keyedBy: StringCodingKey.self, forKey: "additional") {
         self.absolutePath = try additional.decodeIfPresent(String.self, forKey: "real_path")

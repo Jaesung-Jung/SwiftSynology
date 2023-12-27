@@ -37,7 +37,7 @@ extension FileStation {
       parameters: [
         "offset": offset,
         "limit": limit,
-        "additional": additionalInfo?.map { #""\#($0)""# }.joined(separator: ",").map { "[\($0)]" },
+        "additional": additionalInfo.map { "[\($0.map { #""\#($0.rawValue)""# }.joined(separator: ","))]" },
         "status_filter": status?.rawValue
       ]
     )

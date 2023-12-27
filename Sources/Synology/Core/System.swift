@@ -58,12 +58,30 @@ public struct System: DSRequestable, AuthenticationProviding {
     )
     return try await dataTask(api).data()
   }
+
+  public func storageInfo() async throws -> StorageInfo {
+    let api = DiskStationAPI<StorageInfo>(
+      name: "SYNO.Core.System",
+      method: "info",
+      preferredVersion: 3,
+      parameters: [
+        "type": "storage"
+      ]
+    )
+    return try await dataTask(api).data()
+  }
 }
 
 // MARK: - System.Health
 
 extension System {
   public struct Health: Decodable {
+    public enum Status: Int, Decodable {
+      case danger
+      case attention
+      case normal
+    }
+
     public struct Interface: Decodable {
       public let id: String
       public let ip: String
@@ -72,10 +90,28 @@ extension System {
 
     public let hostname: String
     public let interfaces: [Interface]
+    public let status: Status
+    public let upTime: TimeInterval
 
-    public init(hostname: String, interfaces: [Interface]) {
+    public init(hostname: String, interfaces: [Interface], status: Status, upTime: TimeInterval) {
       self.hostname = hostname
       self.interfaces = interfaces
+      self.status = status
+      self.upTime = upTime
+    }
+
+    public init(from decoder: Decoder) throws {
+      let container = try decoder.container(keyedBy: StringCodingKey.self)
+      self.hostname = try container.decode(String.self, forKey: "hostname")
+      self.interfaces = try container.decode([Interface].self, forKey: "interfaces")
+      do {
+        let ruleContainer = try container.nestedContainer(keyedBy: StringCodingKey.self, forKey: "rule")
+        self.status = try ruleContainer.decodeIfPresent(Status.self, forKey: "type") ?? .normal
+      } catch {
+        self.status = .normal
+      }
+      let upTimeComponents = try container.decode(String.self, forKey: "uptime").split(separator: ":").compactMap { Int($0) }
+      self.upTime = zip(upTimeComponents.reversed(), [1, 60, 3600]).map { TimeInterval($0 * $1) }.reduce(0, +)
     }
   }
 }
@@ -84,12 +120,29 @@ extension System {
 
 extension System {
   public struct Info: Decodable {
-    public struct CPU {
+    public struct CPU: CustomStringConvertible {
       public let clockSpeed: Int
       public let coreCount: Int
       public let family: String
       public let series: String
       public let vendor: String
+
+      public var description: String {
+        let cpuModel = [vendor, family, series]
+          .filter { !$0.isEmpty }
+          .joined(separator: " ")
+        let speed = Double(clockSpeed) / 1_000_000_000
+
+        let cpuClock: String
+        if #available(iOS 15.0, macCatalyst 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, visionOS 1.0, *) {
+          let formatStyle = FloatingPointFormatStyle<Double>().precision(.fractionLength(1))
+          cpuClock = speed.formatted(formatStyle)
+        } else {
+          cpuClock = String(format: "%.1f", Double(speed) / 1000)
+        }
+
+        return "\(cpuModel) (\(cpuClock)GHz)"
+      }
 
       public init(clockSpeed: Int, coreCount: Int, family: String, series: String, vendor: String) {
         self.clockSpeed = clockSpeed
@@ -164,13 +217,13 @@ extension System {
       self.model = try container.decode(String.self, forKey: "model")
       self.serial = try container.decode(String.self, forKey: "serial")
       self.cpu = try CPU(
-        clockSpeed: container.decode(Int.self, forKey: "cpu_clock_speed"),
+        clockSpeed: container.decode(Int.self, forKey: "cpu_clock_speed") * 1_000_000,
         coreCount: Int(container.decode(String.self, forKey: "cpu_cores")) ?? 1,
         family: container.decode(String.self, forKey: "cpu_family"),
         series: container.decode(String.self, forKey: "cpu_series"),
         vendor: container.decode(String.self, forKey: "cpu_vendor")
       )
-      self.ram = try container.decode(Int.self, forKey: "ram_size")
+      self.ram = try container.decode(Int.self, forKey: "ram_size") * 1_048_576
       self.firmwareVersion = try container.decode(String.self, forKey: "firmware_ver")
 
       self.supportsESATA = try container.decode(String.self, forKey: "support_esata") == "yes"
@@ -183,6 +236,89 @@ extension System {
       let upTimeComponents = try container.decode(String.self, forKey: "up_time").split(separator: ":").compactMap { Int($0) }
       self.upTime = zip(upTimeComponents.reversed(), [1, 60, 3600]).map { TimeInterval($0 * $1) }.reduce(0, +)
       self.usbDevices = try container.decode([USB].self, forKey: "usb_dev")
+    }
+  }
+}
+
+extension System {
+  public struct StorageInfo: Decodable {
+    public struct Drive: Decodable, Hashable {
+      public let order: Int
+      public let no: String
+      public let path: String
+      public let type: String
+      public let capacity: UInt64
+      public let model: String
+      public let status: String
+      public let temp: Int
+
+      public init(order: Int, no: String, path: String, type: String, capacity: UInt64, model: String, status: String, temp: Int) {
+        self.order = order
+        self.no = no
+        self.path = path
+        self.type = type
+        self.capacity = capacity
+        self.model = model
+        self.status = status
+        self.temp = temp
+      }
+
+      public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: StringCodingKey.self)
+        self.order = try container.decode(Int.self, forKey: "order")
+        self.no = try container.decode(String.self, forKey: "diskno")
+        self.path = try container.decode(String.self, forKey: "diskPath")
+        self.type = try container.decode(String.self, forKey: "diskType")
+        self.capacity = try UInt64(container.decode(String.self, forKey: "capacity")) ?? 0
+        self.model = try container.decode(String.self, forKey: "model")
+        self.status = try container.decode(String.self, forKey: "status")
+        self.temp = try container.decode(Int.self, forKey: "temp")
+      }
+    }
+
+    public struct Volume: Decodable, Hashable {
+      public let name: String
+      public let type: String
+      public let status: String
+      public let usedSize: UInt64
+      public let totalSize: UInt64
+      public let description: String
+      public let volumeName: String
+
+      public init(name: String, type: String, status: String, usedSize: UInt64, totalSize: UInt64, description: String, volumeName: String) {
+        self.name = name
+        self.type = type
+        self.status = status
+        self.usedSize = usedSize
+        self.totalSize = totalSize
+        self.description = description
+        self.volumeName = volumeName
+      }
+
+      public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: StringCodingKey.self)
+        self.name = try container.decode(String.self, forKey: "name")
+        self.type = try container.decode(String.self, forKey: "vol_desc")
+        self.status = try container.decode(String.self, forKey: "status")
+        self.usedSize = try UInt64(container.decode(String.self, forKey: "used_size")) ?? 0
+        self.totalSize = try UInt64(container.decode(String.self, forKey: "total_size")) ?? 0
+        self.description = try container.decode(String.self, forKey: "desc")
+        self.volumeName =  try container.decode(String.self, forKey: "volume")
+      }
+    }
+
+    public let drives: [Drive]
+    public let volumes: [Volume]
+
+    public init(drives: [Drive], volumes: [Volume]) {
+      self.drives = drives
+      self.volumes = volumes
+    }
+
+    public init(from decoder: Decoder) throws {
+      let container = try decoder.container(keyedBy: StringCodingKey.self)
+      self.drives = try container.decode([Drive].self, forKey: "hdd_info")
+      self.volumes = try container.decode([Volume].self, forKey: "vol_info")
     }
   }
 }
