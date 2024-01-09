@@ -1,5 +1,5 @@
 //
-//  SortDescriptor.swift
+//  SortBy.swift
 //
 //  Copyright © 2023 Jaesung Jung. All rights reserved.
 //
@@ -21,17 +21,22 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-// MARK: - SortDescriptor
+// MARK: - SortBy
 
-public struct SortDescriptor<Value: CustomStringConvertible> {
-  let direction: String
-  let value: String
+public struct SortBy<Attribute> {
+  public let direction: String
+  public let attribute: Attribute
 
-  public func ascending(_ value: Value) -> SortDescriptor<Value> {
-    return SortDescriptor(direction: "asc", value: value.description)
+  @inlinable public var isAscending: Bool { direction == "asc" }
+
+  public static func ascending(_ attribute: Attribute) -> SortBy<Attribute> {
+    return SortBy(direction: "asc", attribute: attribute)
   }
 
-  public func descending(_ value: Value) -> SortDescriptor<Value> {
-    return SortDescriptor(direction: "desc", value: value.description)
+  public static func descending(_ attribute: Attribute) -> SortBy<Attribute> {
+    return SortBy(direction: "desc", attribute: attribute)
   }
+}
+
+extension SortBy: Equatable where Attribute: Equatable {
 }

@@ -27,7 +27,7 @@ extension FileStation {
     pattern: String? = nil,
     offset: Int? = nil,
     limit: Int? = nil,
-    sortBy sortDescriptor: SortDescriptor<FileSortAttribute>? = nil,
+    sortBy sortDescriptor: SortBy<FileSortAttribute>? = nil,
     additionalInfo: Set<FileAdditionalInfo>? = nil,
     type: FileTypeFilter? = nil
   ) async throws -> Page<File> {
@@ -40,7 +40,7 @@ extension FileStation {
         "pattern": pattern,
         "offset": offset,
         "limit": limit,
-        "sort_by": sortDescriptor?.value,
+        "sort_by": sortDescriptor?.attribute.rawValue,
         "sort_direction": sortDescriptor?.direction,
         "additional": additionalInfo.map { "[\($0.map { #""\#($0.rawValue)""# }.joined(separator: ","))]" },
         "filetype": type?.rawValue
@@ -201,6 +201,7 @@ extension FileStation {
     public let path: String
     public let isDirectory: Bool
     public let isValid: Bool
+    public let fileExtension: String
 
     // Additional info
     public let absolutePath: String?
@@ -223,14 +224,17 @@ extension FileStation {
       self.dates = dates
       self.permission = permission
       self.type = type
+      self.fileExtension = name.lastIndex(of: ".").map { String(name[name.index(after: $0)...].lowercased()) } ?? ""
     }
 
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
-      self.name = try container.decode(String.self, forKey: "name")
+      let name = try container.decode(String.self, forKey: "name")
+      self.name = name
       self.path = try container.decode(String.self, forKey: "path")
       self.isDirectory = try container.decode(Bool.self, forKey: "isdir")
       self.isValid = try container.decodeIfPresent(String.self, forKey: "status_filter").map { $0.lowercased() == "valid" } ?? true
+      self.fileExtension = name.lastIndex(of: ".").map { String(name[name.index(after: $0)...].lowercased()) } ?? ""
 
       if let additional = try? container.nestedContainer(keyedBy: StringCodingKey.self, forKey: "additional") {
         self.absolutePath = try additional.decodeIfPresent(String.self, forKey: "real_path")

@@ -126,11 +126,11 @@ public struct FileStation: DSRequestable, DSTranferable, DSPollable, Authenticat
     return try await uploadTask(api, to: path, fileName: fileName)
   }
 
-  public func download(_ file: File) async throws -> DownloadTask<URL> {
-    return try await download(at: file.path)
+  public func download(_ file: File, destination: ((URL) -> URL)? = nil) async throws -> DownloadTask<URL> {
+    return try await download(at: file.path, destination: destination)
   }
 
-  public func download(at filePath: String) async throws -> DownloadTask<URL> {
+  public func download(at filePath: String, destination: ((URL) -> URL)? = nil) async throws -> DownloadTask<URL> {
     let api = DiskStationAPI<URL>(
       name: "SYNO.FileStation.Download",
       method: "download",
@@ -149,7 +149,14 @@ public struct FileStation: DSRequestable, DSTranferable, DSPollable, Authenticat
       path = ""
       name = filePath
     }
-    return try await downloadTask(api, at: path, fileName: name)
+    let destination = destination ?? {
+      if #available(iOS 16.0, macCatalyst 16.0, macOS 13.0, tvOS 13.0, watchOS 9.0, visionOS 1.0, *) {
+        return $0.deletingLastPathComponent().appending(path: name)
+      } else {
+        return $0.deletingLastPathComponent().appendingPathComponent(name)
+      }
+    }
+    return try await downloadTask(api, at: path, fileName: name, destination: destination)
   }
 }
 

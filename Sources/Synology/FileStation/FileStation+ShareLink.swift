@@ -29,7 +29,7 @@ extension FileStation {
   public func shareLinks(
     offset: Int? = nil,
     limit: Int? = nil,
-    sortBy sortDescriptor: SortDescriptor<ShareLinkSortAttribute>? = nil,
+    sortBy sortDescriptor: SortBy<ShareLinkSortAttribute>? = nil,
     forceClean: Bool? = nil
   ) async throws -> Page<ShareLink> {
     let api = DiskStationAPI<Page<ShareLink>>(
@@ -39,7 +39,7 @@ extension FileStation {
       parameters: [
         "offset": offset,
         "limit": limit,
-        "sort_by": sortDescriptor?.value,
+        "sort_by": sortDescriptor?.attribute.rawValue,
         "sort_direction": sortDescriptor?.direction,
         "force_clean": forceClean
       ]

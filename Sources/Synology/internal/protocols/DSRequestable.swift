@@ -120,8 +120,8 @@ extension DSRequestable {
       }
   }
 
-  func downloadTask(_ api: DiskStationAPI<URL>, at path: String, fileName: String) async throws -> DownloadTask<URL> {
-    let request = try await downloadRequest(api)
+  func downloadTask(_ api: DiskStationAPI<URL>, at path: String, fileName: String, destination: @escaping (URL) -> URL) async throws -> DownloadTask<URL> {
+    let request = try await downloadRequest(api, destination: destination)
     return DownloadTask(
       serverURL: serverURL,
       path: path,
@@ -177,8 +177,8 @@ extension DSRequestable {
     return try parameterEncoding.encode(URLRequest(url: url, method: api.httpMethod), with: parameters)
   }
 
-  func downloadRequest<Output>(_ api: DiskStationAPI<Output>) async throws -> DownloadRequest {
-    return try await session.download(makeRequest(api: api))
+  func downloadRequest<Output>(_ api: DiskStationAPI<Output>, destination: @escaping (URL) -> URL) async throws -> DownloadRequest {
+    return try await session.download(makeRequest(api: api)) { url, _ in (destination(url), [.createIntermediateDirectories, .removePreviousFile]) }
   }
 
   func uploadRequest<Output>(_ api: DiskStationAPI<Output>) async throws -> UploadRequest {

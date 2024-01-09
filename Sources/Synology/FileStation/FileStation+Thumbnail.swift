@@ -21,6 +21,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
+import Foundation
+
 // MARK: - FileStation (Thumbnail)
 
 extension FileStation {
@@ -36,6 +38,20 @@ extension FileStation {
       ]
     )
     return try await imageTask(api)
+  }
+
+  public func thumbnailRequest(for path: String, size: ThumbnailSize? = nil, orientation: ThumbnailOrientation? = nil) async throws -> URLRequest {
+    let api = DiskStationAPI<PlatformImage>(
+      name: "SYNO.FileStation.Thumb",
+      method: "get",
+      preferredVersion: 2,
+      parameters: [
+        "path": path,
+        "size": size?.rawValue,
+        "rotate": orientation?.rawValue
+      ]
+    )
+    return try await makeRequest(api: api)
   }
 }
 

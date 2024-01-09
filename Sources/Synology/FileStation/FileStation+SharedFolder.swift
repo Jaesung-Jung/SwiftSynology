@@ -27,7 +27,7 @@ extension FileStation {
   public func sharedFolders(
     offset: Int? = nil,
     limit: Int? = nil,
-    sortBy sortDescriptor: SortDescriptor<SharedFolderSortAttribute>? = nil,
+    sortBy sortDescriptor: SortBy<SharedFolderSortAttribute>? = nil,
     additionalInfo: Set<SharedFolderAdditionalInfo>? = nil,
     onlyWritable: Bool = false
   ) async throws -> Page<SharedFolder> {
@@ -38,7 +38,7 @@ extension FileStation {
       parameters: [
         "offset": offset,
         "limit": limit,
-        "sort_by": sortDescriptor?.value,
+        "sort_by": sortDescriptor?.attribute.rawValue,
         "sort_direction": sortDescriptor?.direction,
         "additional": additionalInfo.map { "[\($0.map { #""\#($0.rawValue)""# }.joined(separator: ","))]" },
         "onlywritable": "\(onlyWritable)"
