@@ -128,6 +128,104 @@ extension FileStation {
     return try await dataTask(api).data(path: "files")
   }
 
+  public func move(files: [File], destinationPath: String, overwrite: Bool, accurateProgress: Bool = false, searchTaskID: String? = nil) async throws -> BackgroundTask<Empty, FileProgress> {
+    return try await move(
+      filePaths: files.map(\.path),
+      destinationPath: destinationPath,
+      overwrite: overwrite,
+      accurateProgress: accurateProgress,
+      searchTaskID: searchTaskID
+    )
+  }
+
+  public func move(filePaths: [String], destinationPath: String, overwrite: Bool, accurateProgress: Bool = false, searchTaskID: String? = nil) async throws -> BackgroundTask<Empty, FileProgress> {
+    return try await BackgroundTask {
+      let api = DiskStationAPI<TaskID>(
+        name: "SYNO.FileStation.CopyMove",
+        method: "start",
+        preferredVersion: 3,
+        parameters: [
+          "path": "[\(filePaths.map { #""\#($0)""# }.joined(separator: ","))]",
+          "dest_folder_path": destinationPath,
+          "overwrite": "\(overwrite)",
+          "remove_src": "true",
+          "accurate_progress": "\(accurateProgress)",
+          "search_taskid": searchTaskID
+        ]
+      )
+      return try await dataTask(api).data()
+    } status: { taskID in
+      let api = DiskStationAPI<Empty>(
+        name: "SYNO.FileStation.CopyMove",
+        method: "status",
+        preferredVersion: 3,
+        parameters: [
+          "taskid": taskID.id
+        ]
+      )
+      return try await backgroundDataTask(api).data()
+    } stop: { taskID in
+      let api = DiskStationAPI<Void>(
+        name: "SYNO.FileStation.CopyMove",
+        method: "stop",
+        preferredVersion: 3,
+        parameters: [
+          "taskid": taskID.id
+        ]
+      )
+      return try await dataTask(api).result()
+    }
+  }
+
+  public func copy(files: [File], destinationPath: String, overwrite: Bool, accurateProgress: Bool = false, searchTaskID: String? = nil) async throws -> BackgroundTask<Empty, FileProgress> {
+    return try await copy(
+      filePaths: files.map(\.path),
+      destinationPath: destinationPath,
+      overwrite: overwrite,
+      accurateProgress: accurateProgress,
+      searchTaskID: searchTaskID
+    )
+  }
+
+  public func copy(filePaths: [String], destinationPath: String, overwrite: Bool, accurateProgress: Bool = false, searchTaskID: String? = nil) async throws -> BackgroundTask<Empty, FileProgress> {
+    return try await BackgroundTask {
+      let api = DiskStationAPI<TaskID>(
+        name: "SYNO.FileStation.CopyMove",
+        method: "start",
+        preferredVersion: 3,
+        parameters: [
+          "path": "[\(filePaths.map { #""\#($0)""# }.joined(separator: ","))]",
+          "dest_folder_path": destinationPath,
+          "overwrite": "\(overwrite)",
+          "remove_src": "false",
+          "accurate_progress": "\(accurateProgress)",
+          "search_taskid": searchTaskID
+        ]
+      )
+      return try await dataTask(api).data()
+    } status: { taskID in
+      let api = DiskStationAPI<Empty>(
+        name: "SYNO.FileStation.CopyMove",
+        method: "status",
+        preferredVersion: 3,
+        parameters: [
+          "taskid": taskID.id
+        ]
+      )
+      return try await backgroundDataTask(api).data()
+    } stop: { taskID in
+      let api = DiskStationAPI<Void>(
+        name: "SYNO.FileStation.CopyMove",
+        method: "stop",
+        preferredVersion: 3,
+        parameters: [
+          "taskid": taskID.id
+        ]
+      )
+      return try await dataTask(api).result()
+    }
+  }
+
   public func delete(file: File, recursive: Bool? = nil, searchTaskID: String? = nil) async throws {
     return try await delete(filePaths: [file.path], recursive: recursive, searchTaskID: searchTaskID)
   }
@@ -224,7 +322,7 @@ extension FileStation {
       self.dates = dates
       self.permission = permission
       self.type = type
-      self.fileExtension = name.lastIndex(of: ".").map { String(name[name.index(after: $0)...].lowercased()) } ?? ""
+      self.fileExtension = isDirectory ? "" : name.lastIndex(of: ".").map { String(name[name.index(after: $0)...].lowercased()) } ?? ""
     }
 
     public init(from decoder: Decoder) throws {
@@ -234,7 +332,7 @@ extension FileStation {
       self.path = try container.decode(String.self, forKey: "path")
       self.isDirectory = try container.decode(Bool.self, forKey: "isdir")
       self.isValid = try container.decodeIfPresent(String.self, forKey: "status_filter").map { $0.lowercased() == "valid" } ?? true
-      self.fileExtension = name.lastIndex(of: ".").map { String(name[name.index(after: $0)...].lowercased()) } ?? ""
+      self.fileExtension = isDirectory ? "" : name.lastIndex(of: ".").map { String(name[name.index(after: $0)...].lowercased()) } ?? ""
 
       if let additional = try? container.nestedContainer(keyedBy: StringCodingKey.self, forKey: "additional") {
         self.absolutePath = try additional.decodeIfPresent(String.self, forKey: "real_path")
@@ -253,6 +351,21 @@ extension FileStation {
         self.permission = nil
         self.type = nil
       }
+    }
+
+    public init(_ sharedFolder: SharedFolder) {
+      self.name = sharedFolder.name
+      self.path = sharedFolder.path
+      self.isDirectory = sharedFolder.isDirectory
+      self.isValid = true
+      self.absolutePath = sharedFolder.absolutePath
+      self.mountPointType = sharedFolder.mountPointType
+      self.size = sharedFolder.usesSpace
+      self.owner = sharedFolder.owner
+      self.dates = sharedFolder.dates
+      self.permission = sharedFolder.permission
+      self.type = nil
+      self.fileExtension = ""
     }
   }
 }
@@ -340,6 +453,23 @@ extension FileStation {
       self.numberOfDirectories = try container.decode(Int.self, forKey: "num_dir")
       self.numberOfFiles = try container.decode(Int.self, forKey: "num_file")
       self.totalSize = try container.decode(UInt64.self, forKey: "total_size")
+    }
+  }
+}
+
+// MARK: - FileStation.FileProgress
+
+extension FileStation {
+  public struct FileProgress: Decodable {
+    public let progress: Double
+    public let processedSize: UInt64
+    public let totalSize: UInt64
+
+    public init(from decoder: Decoder) throws {
+      let container = try decoder.container(keyedBy: StringCodingKey.self)
+      self.progress = try container.decode(Double.self, forKey: "progress")
+      self.processedSize = try container.decode(UInt64.self, forKey: "processed_size")
+      self.totalSize = try container.decode(UInt64.self, forKey: "total")
     }
   }
 }
