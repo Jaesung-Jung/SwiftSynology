@@ -128,7 +128,7 @@ extension FileStation {
     return try await dataTask(api).data(path: "files")
   }
 
-  public func move(files: [File], destinationPath: String, overwrite: Bool, accurateProgress: Bool = false, searchTaskID: String? = nil) async throws -> BackgroundTask<Empty, FileProgress> {
+  public func move(files: [File], destinationPath: String, overwrite: Bool, accurateProgress: Bool = false, searchTaskID: String? = nil) async throws -> BackgroundTask<Empty, FileTaskProgress> {
     return try await move(
       filePaths: files.map(\.path),
       destinationPath: destinationPath,
@@ -138,7 +138,7 @@ extension FileStation {
     )
   }
 
-  public func move(filePaths: [String], destinationPath: String, overwrite: Bool, accurateProgress: Bool = false, searchTaskID: String? = nil) async throws -> BackgroundTask<Empty, FileProgress> {
+  public func move(filePaths: [String], destinationPath: String, overwrite: Bool, accurateProgress: Bool = false, searchTaskID: String? = nil) async throws -> BackgroundTask<Empty, FileTaskProgress> {
     return try await BackgroundTask {
       let api = DiskStationAPI<TaskID>(
         name: "SYNO.FileStation.CopyMove",
@@ -177,7 +177,7 @@ extension FileStation {
     }
   }
 
-  public func copy(files: [File], destinationPath: String, overwrite: Bool, accurateProgress: Bool = false, searchTaskID: String? = nil) async throws -> BackgroundTask<Empty, FileProgress> {
+  public func copy(files: [File], destinationPath: String, overwrite: Bool, accurateProgress: Bool = false, searchTaskID: String? = nil) async throws -> BackgroundTask<Empty, FileTaskProgress> {
     return try await copy(
       filePaths: files.map(\.path),
       destinationPath: destinationPath,
@@ -187,7 +187,7 @@ extension FileStation {
     )
   }
 
-  public func copy(filePaths: [String], destinationPath: String, overwrite: Bool, accurateProgress: Bool = false, searchTaskID: String? = nil) async throws -> BackgroundTask<Empty, FileProgress> {
+  public func copy(filePaths: [String], destinationPath: String, overwrite: Bool, accurateProgress: Bool = false, searchTaskID: String? = nil) async throws -> BackgroundTask<Empty, FileTaskProgress> {
     return try await BackgroundTask {
       let api = DiskStationAPI<TaskID>(
         name: "SYNO.FileStation.CopyMove",
@@ -457,10 +457,10 @@ extension FileStation {
   }
 }
 
-// MARK: - FileStation.FileProgress
+// MARK: - FileStation.FileTaskProgress
 
 extension FileStation {
-  public struct FileProgress: Decodable {
+  public struct FileTaskProgress: Decodable {
     public let progress: Double
     public let processedSize: UInt64
     public let totalSize: UInt64
@@ -468,8 +468,8 @@ extension FileStation {
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: StringCodingKey.self)
       self.progress = try container.decode(Double.self, forKey: "progress")
-      self.processedSize = try container.decode(UInt64.self, forKey: "processed_size")
       self.totalSize = try container.decode(UInt64.self, forKey: "total")
+      self.processedSize = try container.decodeIfPresent(UInt64.self, forKey: "processed_size") ?? UInt64(Double(totalSize) * progress)
     }
   }
 }
