@@ -85,9 +85,11 @@ extension QuickConnect {
           }
         }
       }
-      return await group.compactMap { $0 }.reduce(into: []) {
-        $0.append($1)
+      var results: [ConnectInfo] = []
+      for await result in group.compactMap({ $0 }) {
+        results.append(result)
       }
+      return results
     }
   }
 }

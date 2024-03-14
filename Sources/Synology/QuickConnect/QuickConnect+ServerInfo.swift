@@ -57,7 +57,7 @@ extension QuickConnect {
           connectTypesForDDNS(scheme: scheme),
           connectTypesForFQDN(scheme: scheme)
         ]
-          .flatMap { $0 }
+        .flatMap { $0 }
       } else {
         return [
           connectTypesForInternalIP(scheme: scheme),
@@ -65,7 +65,7 @@ extension QuickConnect {
           connectTypesForDDNS(scheme: scheme),
           connectTypesForFQDN(scheme: scheme)
         ]
-          .flatMap { $0 }
+        .flatMap { $0 }
       }
     }
 
