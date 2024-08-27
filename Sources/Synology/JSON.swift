@@ -31,6 +31,48 @@ struct JSON {
     self.element = element
   }
 
+  init(_ dictionary: [String: Any]) {
+    let elements: [String: JSON] = dictionary.mapValues { value in
+      if let dictionary = value as? [String: Any] {
+        return JSON(dictionary)
+      } else if let array = value as? [Any] {
+        return JSON(array)
+      } else if let bool = value as? Bool {
+        return JSON(.bool(bool))
+      } else if let int = value as? Int {
+        return JSON(.integer(int))
+      } else if let double = value as? Double {
+        return JSON(.double(double))
+      } else if let string = value as? String {
+        return JSON(.string(string))
+      } else {
+        return JSON(.null)
+      }
+    }
+    self.element = .dictionary(elements)
+  }
+
+  init(_ array: [Any]) {
+    let items = array.map { item in
+      if let dictionary = item as? [String: Any] {
+        return JSON(dictionary)
+      } else if let array = item as? [Any] {
+        return JSON(array)
+      } else if let bool = item as? Bool {
+        return JSON(.bool(bool))
+      } else if let int = item as? Int {
+        return JSON(.integer(int))
+      } else if let double = item as? Double {
+        return JSON(.double(double))
+      } else if let string = item as? String {
+        return JSON(.string(string))
+      } else {
+        return JSON(.null)
+      }
+    }
+    self.element = .array(items)
+  }
+
   subscript(dynamicMember dynamicMemeber: String) -> JSON {
     guard case .dictionary(let dictionary) = element, let item = dictionary[dynamicMemeber] else {
       return JSON(.null)

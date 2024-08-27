@@ -42,4 +42,49 @@ public enum CodePage: String {
   case hungarian = "hun"
   case turkish = "trk"
   case czech = "csy"
+
+  init(languageCode: String) {
+    switch languageCode {
+    case "zh_Hant":
+      self = .chineseTraditional
+    case "zh_Hans":
+      self = .chineseSimplified
+    case "ko":
+      self = .korean
+    case "de":
+      self = .german
+    case "fr":
+      self = .french
+    case "it":
+      self = .italian
+    case "es":
+      self = .spanish
+    case "ja":
+      self = .japanese
+    case "da":
+      self = .danish
+    case "no":
+      self = .norwegian
+    case "sv":
+      self = .swedish
+    case "nl":
+      self = .dutch
+    case "ru":
+      self = .russian
+    case "pl":
+      self = .polish
+    case "":
+      self = .portugueseBrazil
+    case "pt":
+      self = .portuguesePortugal
+    case "hu":
+      self = .hungarian
+    case "tr":
+      self = .turkish
+    case "cs":
+      self = .czech
+    default:
+      self = .englishUS
+    }
+  }
 }

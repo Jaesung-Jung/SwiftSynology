@@ -32,17 +32,21 @@ import AppKit
 public typealias PlatformImage = NSImage
 #endif
 
+public typealias NetworkingError = AFError
+
 // MARK: - DiskStation
 
 public class DiskStation {
   let session: Session
   let authStore: AuthStore
+  let stringStore: StringStore
 
   public let serverURL: URL
   public let apiInfo: APIInfo
   public let region: Region
+  public let codePage: CodePage
 
-  public init(serverURL: URL, sessionID: String? = nil, enableEventLog: Bool = true) {
+  public init(serverURL: URL, sessionID: String? = nil, locale: Locale = .current, enableEventLog: Bool = true) {
     #if DEBUG
     self.session = Session(eventMonitors: enableEventLog ? [SessionEventLogger()] : [])
     #else
@@ -52,6 +56,12 @@ public class DiskStation {
     self.serverURL = serverURL
     self.apiInfo = APIInfo(serverURL: serverURL, session: session)
     self.region = Region(serverURL: serverURL, session: session, apiInfo: apiInfo, auth: authStore)
+    if #available(iOS 16.0, macCatalyst 16.0, macOS 13.0, tvOS 13.0, watchOS 9.0, visionOS 1.0, *) {
+      self.codePage = locale.language.languageCode.map { CodePage(languageCode: $0.identifier) } ?? .englishUS
+    } else {
+      self.codePage = locale.languageCode.map { CodePage(languageCode: $0) } ?? .englishUS
+    }
+    self.stringStore = StringStore(serverURL: serverURL, session: session, apiInfo: apiInfo, auth: authStore, codePage: codePage)
   }
 }
 
@@ -110,6 +120,20 @@ extension DiskStation {
       apiInfo: apiInfo,
       auth: authStore,
       region: region
+    )
+  }
+}
+
+// MARK: - DiskStation (SystemNotification)
+
+extension DiskStation {
+  public func notification() -> SystemNotification {
+    return SystemNotification(
+      serverURL: serverURL,
+      session: session,
+      apiInfo: apiInfo,
+      auth: authStore,
+      stringStore: stringStore
     )
   }
 }
