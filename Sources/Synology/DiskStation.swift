@@ -65,12 +65,6 @@ public class DiskStation {
   }
 }
 
-// MARK: - DiskStation (Connection)
-
-extension DiskStation {
-  public var connection: Connection { Connection() }
-}
-
 // MARK: - DiskStation (Auth)
 
 extension DiskStation {
