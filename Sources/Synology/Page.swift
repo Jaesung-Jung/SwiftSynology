@@ -36,3 +36,41 @@ public struct Page<Element: Decodable> {
     self.elements = elements
   }
 }
+
+// MARK: - Page (Sequence)
+
+extension Page: Sequence {
+  public func makeIterator() -> some IteratorProtocol<Element> {
+    return elements.makeIterator()
+  }
+}
+
+// MARK: - Page (Collection)
+
+extension Page: Collection {
+  public var startIndex: Int { elements.startIndex }
+
+  public var endIndex: Int { elements.endIndex }
+
+  public var count: Int { elements.count }
+
+  public func index(after i: Int) -> Int {
+    return elements.index(after: i)
+  }
+
+  public subscript(position: Int) -> Element {
+    return elements[position]
+  }
+}
+
+// MARK: - Page (BidirectionalCollection)
+
+extension Page: BidirectionalCollection {
+  public var indices: Range<Int> {
+    return elements.indices
+  }
+
+  public func index(before i: Int) -> Int {
+    return elements.index(before: i)
+  }
+}
