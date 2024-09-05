@@ -41,14 +41,18 @@ public actor QuickConnect {
     self.pingPong = PingPoing(session: session)
   }
 
-  public func connect(id serverID: String) async throws -> DiskStation {
+  public func connect(id serverID: String, codePage: CodePage? = nil) async throws -> DiskStation {
     let serverInfos = try await serverInfo(serverID: serverID)
     let connectInfos = zip(["https", "http"], serverInfos).flatMap { $1.connectInfos(scheme: $0) }
     let availables = await availableConnectInfos(for: connectInfos).sorted()
     guard let first = availables.first else {
       throw QuickConnectError.availableServerNotFound
     }
-    return DiskStation(serverURL: try first.url.asURL())
+    return if let codePage {
+      DiskStation(serverURL: try first.url.asURL(), codePage: codePage)
+    } else {
+      DiskStation(serverURL: try first.url.asURL())
+    }
   }
 }
 

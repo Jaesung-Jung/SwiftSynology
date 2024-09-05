@@ -46,7 +46,16 @@ public class DiskStation {
   public let region: Region
   public let codePage: CodePage
 
-  public init(serverURL: URL, sessionID: String? = nil, locale: Locale = .current, enableEventLog: Bool = true) {
+  public convenience init(serverURL: URL, sessionID: String? = nil, locale: Locale = .current, enableEventLog: Bool = true) {
+    let codePage: CodePage = if #available(iOS 16.0, macCatalyst 16.0, macOS 13.0, tvOS 13.0, watchOS 9.0, visionOS 1.0, *) {
+      locale.language.languageCode.map { CodePage(languageCode: $0.identifier) } ?? .englishUS
+    } else {
+      locale.languageCode.map { CodePage(languageCode: $0) } ?? .englishUS
+    }
+    self.init(serverURL: serverURL, sessionID: sessionID, codePage: codePage, enableEventLog: enableEventLog)
+  }
+
+  public init(serverURL: URL, sessionID: String? = nil, codePage: CodePage, enableEventLog: Bool = true) {
     #if DEBUG
     self.session = Session(eventMonitors: enableEventLog ? [SessionEventLogger()] : [])
     #else
@@ -56,11 +65,7 @@ public class DiskStation {
     self.serverURL = serverURL
     self.apiInfo = APIInfo(serverURL: serverURL, session: session)
     self.region = Region(serverURL: serverURL, session: session, apiInfo: apiInfo, auth: authStore)
-    if #available(iOS 16.0, macCatalyst 16.0, macOS 13.0, tvOS 13.0, watchOS 9.0, visionOS 1.0, *) {
-      self.codePage = locale.language.languageCode.map { CodePage(languageCode: $0.identifier) } ?? .englishUS
-    } else {
-      self.codePage = locale.languageCode.map { CodePage(languageCode: $0) } ?? .englishUS
-    }
+    self.codePage = codePage
     self.stringStore = StringStore(serverURL: serverURL, session: session, apiInfo: apiInfo, auth: authStore, codePage: codePage)
   }
 }
