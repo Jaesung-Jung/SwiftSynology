@@ -169,9 +169,9 @@ extension FileStation {
     public let supportFileRequest: Bool
     public let supportFileSharing: Bool
     public let supportVirtualProtocols: [String]
-    public let systemCodepage: String
+    public let systemCodepage: CodePage?
 
-    public init(hostname: String, isManager: Bool, supportFileRequest: Bool, supportFileSharing: Bool, supportVirtualProtocols: [String], systemCodepage: String) {
+    public init(hostname: String, isManager: Bool, supportFileRequest: Bool, supportFileSharing: Bool, supportVirtualProtocols: [String], systemCodepage: CodePage?) {
       self.hostname = hostname
       self.isManager = isManager
       self.supportFileRequest = supportFileRequest
@@ -187,7 +187,7 @@ extension FileStation {
       self.supportFileRequest = try container.decode(Bool.self, forKey: "support_file_request")
       self.supportFileSharing = try container.decode(Bool.self, forKey: "support_file_sharing")
       self.supportVirtualProtocols = try container.decode([String].self, forKey: "support_virtual_protocol")
-      self.systemCodepage = try container.decode(String.self, forKey: "system_codepage")
+      self.systemCodepage = CodePage(rawValue: try container.decode(String.self, forKey: "system_codepage"))
     }
   }
 }
