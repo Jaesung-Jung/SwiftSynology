@@ -5,28 +5,20 @@
 </picture>
 <br />
 <br />
-<img src="https://img.shields.io/badge/platforms-iOS%20%7C%20macOS%20%7C%20tvOS%20%7C%20watchOS-333333.svg" alt="Supported Platforms: iOS, macOS, tvOS and watchOS" />
+<img src="https://img.shields.io/badge/platforms-iOS 13+%20%7C%20macOS%20%7C%20tvOS%20%7C%20watchOS-333333.svg" alt="Supported Platforms: iOS, macOS, tvOS and watchOS" />
 <br />
 <a href="https://github.com/swiftlang/swift-package-manager" alt="RxSwift on Swift Package Manager" title="RxSwift on Swift Package Manager"><img src="https://img.shields.io/badge/Swift%20Package%20Manager-compatible-brightgreen.svg" /></a>
+
+<p align="center"><a href="https://github.com/Jaesung-Jung/SwiftSynology/blob/main/README_KO.md">한국어</a></p>
 </p>
 
-Synology NAS 장치와의 상호작용을 위한 Swift 라이브러리로, Synology NAS의 다양한 기능을 애플리케이션에 손쉽게 통합할 수 있습니다. 
+`SwiftSynology` is a Swift library that facilitates interaction with `Synology NAS` devices, making it easy to integrate various `Synology NAS` functionalities into applications. The library is designed with a structure optimized for concurrency handling by leveraging `Swift Concurrency`’s `actor` and `async`/`await` paradigms. This ensures safe and efficient asynchronous operations while minimizing concurrency-related issues.
 
-`SwiftSynology`는 `Swift Concurrency`의 `actor` 및 `async`/`await` 패러다임을 활용하여 동시성 처리를 최적화한 구조로 설계되었습니다. 이를 통해 안전하고 효율적인 비동기 작업 관리가 가능하며, 동시성 관련 문제를 최소화합니다.
-
-## 목차
-### [Install Guide](#설치)
-### [Usage](#사용법)
-### [License](#라이센스)
-
-## 설치
+## Install
 ### [Swift Package Manager](https://github.com/swiftlang/swift-package-manager)
-Swift 패키지 관리자는 Swift 코드를 배포하는 작업을 자동화하는 도구로, Swift 컴파일러에 통합되어 있습니다.
 The [Swift Package Manager](https://github.com/swiftlang/swift-package-manager) is a tool for automating the distribution of Swift code and is integrated into the swift compiler.
 
-Swift 패키지를 설정한 후, `Package.swift`의 `dependencies` 값이나 Xcode의 패키지 목록에 `SwiftSynology`를 추가하는 것만으로 간단하게 종속성으로 추가할 수 있습니다.
 Once you have your Swift package set up, adding `SwiftSynology` as a dependency is as easy as adding it to the `dependencies` value of your `Package.swift` or the Package list in Xcode.
-
 ```swift
 import PackageDescription
 
@@ -45,14 +37,14 @@ let package = Package(
   ]
 )
 ```
+<br/>
 
-## 사용법
-### 연결 생성
-시작은 `DiskStation` 객체를 생성하는 것입니다. DiskStation은 `DSM`과 상호작용을 위한 추상화입니다. `DiskStation`을 생성하기 위해서는 `QuickConnect`를 이용하여 자동으로 `URL`을 찾거나, 명시적으로 `URL`을 전달할 수 있습니다.
+## Usage
+### Create a DiskStation
+The first step is to create a `DiskStation` object. `DiskStation` is an abstraction layer for interacting with `DSM`. To create a `DiskStation`, you can either use `QuickConnect` to automatically find the `URL`, or explicitly provide the `URL`.
 
-#### QuickConnect 사용
-`QuickConnect`는 포트 전달 규칙을 설정할 필요 없이 클라이언트 응용 프로그램이 인터넷을 통해 Synology NAS에 연결할 수 있도록 해줍니다. `SynologySwift`에서는 `QuickConnect` API를 제공하여 손쉽게 장치를 검색할 수 있는 기능을 제공합니다.
-
+#### Use QuickConnect
+`QuickConnect` allows client applications to connect to `DSM` over the internet without the need to configure port forwarding rules. `SynologySwift` provides a `QuickConnect` API that offers an easy way to discover devices.
 ```swift
 do {
   let quickConnect = QuickConnect()
@@ -67,7 +59,7 @@ do {
 }
 ```
 
-`QuickConnect`는 여러 연결방식을 시도한 후, 우선순위가 가장 높은 것과 연결됩니다.
+`QuickConnect` attempts multiple connection methods and connects to the one with the highest priority.
 ```
 <QuickConnect Priority>
 - https
@@ -86,48 +78,47 @@ do {
 - Dynamic Port
 ```
 
-> QuickConnect는 https/http 모든 연결을 지원하지만, [NSAppTransportSecurity](https://developer.apple.com/documentation/bundleresources/information_property_list/nsapptransportsecurity/) 설정으로 인해 http 연결이 실패할 수 있습니다.
+> QuickConnect supports both HTTPS and HTTP connections, but HTTP connections may fail due to [NSAppTransportSecurity](https://developer.apple.com/documentation/bundleresources/information_property_list/nsapptransportsecurity/) configuration.
 
-#### URL 사용
-`URL`을 전달하여 `DiskStation`을 생성할 수 있습니다.
+#### Use URL
+You can create a `DiskStation` object by providing a `URL`.
 ```swift
 let diskStation = DiskStation(serverURL: <#url#>)
 ```
 
-`QuickConnect`와 다르게 `URL`을 통한 `DiskStation` 연결 가능여부를 수동으로 확인해야 합니다. `DSM` 연결 상태를 테스트 하기 위해 `PingPong` API를 제공합니다.
-
+Unlike `QuickConnect`, when using a URL, you need to manually check the connection availability to the DSM. To test the DSM connection status, the `PingPong` API is provided.
 ```swift
 let pingPong = PingPoing()
 let pong = try await pingPong.ping(to: <#url#>)
 print(pong.success) // true or false (Bool)
 ```
 
-#### 지역화
-`DSM`은 여러 언어를 지원하며 `CodePage` 값을 전달하면 문자열들이 언어에 맞추어 전달됩니다. 기본적으로 `SwiftSynology` 패키지 내에서는 `Apple System Language` 값을 읽어 `CodePage`를 자동으로 구성합니다.
+#### Localization
+DSM supports multiple languages, and by passing a `CodePage` value, the strings are configured according to the selected language. By default, the `SwiftSynology` package automatically configures the `CodePage` by reading the system language settings.
 
-지원되는 언어는 다음과 같으며, `DiskStation` 인스턴스를 생성할 때, `CodePage`를 전달할 수 있습니다.
+The supported languages are as follows, and you can pass the `CodePage` value when creating a `DiskStation` instance.
 ```swift
 public enum CodePage {
-  case englishUS // English (US)
+  case englishUS          // English (US)
   case chineseTraditional // Chinese (Traditional)
-  case chineseSimplified // Chinese (Simplified)
-  case korean // Korean
-  case german // German
-  case french // French
-  case italian // Italian
-  case spanish // Spanish
-  case japanese // Japanese
-  case danish // Danish
-  case norwegian // Norwegian
-  case swedish // Swedish
-  case dutch // Dutch
-  case russian // Russian
-  case polish // Polish
-  case portugueseBrazil // PortugueseBrazil
+  case chineseSimplified  // Chinese (Simplified)
+  case korean             // Korean
+  case german             // German
+  case french             // French
+  case italian            // Italian
+  case spanish            // Spanish
+  case japanese           // Japanese
+  case danish             // Danish
+  case norwegian          // Norwegian
+  case swedish            // Swedish
+  case dutch              // Dutch
+  case russian            // Russian
+  case polish             // Polish
+  case portugueseBrazil   // PortugueseBrazil
   case portuguesePortugal // PortuguesePortugal
-  case hungarian // Hungarian
-  case turkish // Turkish
-  case czech // Czech
+  case hungarian          // Hungarian
+  case turkish            // Turkish
+  case czech              // Czech
 }
 
 // Use QuickConnect
@@ -136,16 +127,16 @@ let diskStation = QuickConnect().connect(id: <#QuickConnectID#>, codePage: .engl
 // Use URL
 let diskStation = DiskStation(serverURL: <#url#>, codePage: .englishUS)
 ```
+<br/>
 
-### 인증
-`DiskStation`의 `auth()`에는 인증을 위한 API를 제공합니다.
+### Auth
+The `auth()` function in `DiskStation` provides APIs for authentication.
+<br/>
+`SynologySwift` stores the `sessionID` internally upon a successful login and automatically includes the authentication token when making API requests.
+> 💡 Since the `sessionID` is lost when the program terminates, it should be stored in a persistent storage like `Keychain` to maintain the login session. Further details are explained below.
 
-`SynologySwift`는 로그인이 성공하면 내부적으로 `sessionID`를 보관하고 API를 호출할 때, 자동으로 인증값을 포함하여 요청합니다.
-
-> 💡 `sessionID`는 프로그램이 종료되면 사라지기 때문에 로그인을 유지하기 위해선 `Keychain`과 같은 영속성 저장소에 저장하여 사용해야 합니다. 자세한 내용은 아래에서 다시 설명합니다.
-
-#### 로그인
-`auth().login(account:password:)`를 사용하여 로그인을 할 수 있습니다.
+#### Login
+You can perform a login using the `auth().login(account:password:)` API.
 ```swift
 do {
   let authorization = try await diskStation.auth().login(
@@ -159,7 +150,7 @@ do {
 }
 ```
 
-연결이 성공하면 `Authorization`이 만들어지고 이 값에는 인증을 위한 `sessionID` 값이 있습니다. 인증을 유지하기 위해서 이 값을 저장하고 DiskStation 객체를 생성할 때 전달하면 됩니다.
+When the connection is successful, an `Authorization` is generated, which contains the `sessionID` for authentication. To maintain the authentication, store this value and provide it when creating the `DiskStation` object.
 ```swift
 let diskStation = DiskStation(
   serverURL: <#url#>,
@@ -167,8 +158,8 @@ let diskStation = DiskStation(
 )
 ```
 
-#### 이중인증
-`DSM`은 이중인증을 지원하며 이를 위한 API를 제공하고 있습니다. 로그인 하려는 계정이 이중인증을 사용하는지 여부를 먼저 알기 위해서는 `OTP` 값 없이 로그인을 시도합니다.
+#### Two-Factor Authentication
+`DSM` supports two-factor authentication and provides an API for it. To determine if the account requires two-factor authentication, you should attempt to log in without an `OTP` value first.
 ```swift
 do {
   let authorization = try await diskStation.auth().login(
@@ -180,7 +171,7 @@ do {
 }
 ```
 
-`requiredTwoFactorAuthenticationCode`오류가 발생하면 login(account:password:otp:)를 호출하여 `Auth.OTP` 값을 함께 전달하여야 합니다.
+If a `requiredTwoFactorAuthenticationCode` error occurs, you need to call `login(account:password:otp:)` and provide the `Auth.OTP` value.
 ```swift
 do {
   let authorization = try await diskStation.auth().login(
@@ -193,7 +184,7 @@ do {
 }
 ```
 
-`enableDeviceToken`은 `신뢰할 수 있는 장치` 설정을 위한 값으로 true 값을 전달하고, `authorization`의 `deviceID`를 저장하여 다음 로그인 시 OTP 인증을 건너뛸 수 있습니다.
+`enableDeviceToken` is a value used to set a `trusted device`. By passing true and storing the `deviceID` from the `Authorization`, you can skip OTP authentication on subsequent logins.
 ```swift
 let authorization = try await diskStation.auth().login(
   account: <#account#>,
@@ -202,132 +193,138 @@ let authorization = try await diskStation.auth().login(
 )
 ```
 
-#### 로그아웃
-`logout()` API를 사용하여 디바이스에서 명시적으로 로그아웃 할 수 있습니다. 이 작업을 수행하게 되면 `DSM`에서 발행 된 `sessionID`가 만료 됩니다.
+#### Logout
+You can explicitly log out from the device using the `logout()` API. Performing this action will invalidate the `sessionID` issued by DSM.
 ```swift
 try await diskStation.logout()
 ```
+<br/>
 
-### 시스템
-`diskStation.system()`에는 `DSM` 시스템 상태 정보를 읽기 위한 API를 제공하고 있습니다.
+### System
+`system()` provides an API to retrieve the DSM system status information.
 
 #### Health
-`system().health()`를 사용하여 `DSM`의 간단한 정보 및 상태를 읽을 수 있습니다.
+You can use `system().health()` to retrieve basic information and the status of the DSM.
 ```swift
 let health = try await diskStation.system().health()
 ```
 ###### ... System.Health
 |Property|Type|Description|
 |--------|----|-----------|
-|hostname|String|`DSM`의 호스트이름|
-|interfaces|Array<System.Health.Interface>|장치의 Network 인터페이스 정보|
-|status|System.Health.Status|장치의 상태 (`danger`\|`attention`\|`normal`)|
-|upTime|TimeInterval|장치가 부팅된 후 경과한 시간|
+|hostname|String|Host name of the DSM|
+|interfaces|Array<System.Health.Interface>|Network interface of the device|
+|status|System.Health.Status|Device status (`danger`\|`attention`\|`normal`)|
+|upTime|TimeInterval|Elapsed time since the device was booted|
 ###### ... System.Health.Interface
 |Property|Type|Description|
 |--------|----|-----------|
-|id|String|인터페이스 ID|
-|ip|String|IP 주소|
-|type|String|인터페이스 Type|
+|id|String|Interface ID|
+|ip|String|IP Address|
+|type|String|Interface Type|
 
 
 #### Info
-`system().info()`를 사용하여 장치의 상세한 정보를 읽을 수 있습니다.
+You can use `system().info()` to retrieve detailed information about the device.
 ```swift
 let info = try await diskStation.system().info()
 ```
 ###### ... System.Info
 |Property|Type|Description|
 |--------|----|-----------|
-|model|String|디바이스 모델명|
-|serial|String|디바이스 시리얼번호|
-|cpu|System.Info.CPU|CPU 정보|
-|ram|Int|RAM 용량|
-|firmwareVersion|String|Firmware 버전|
-|supportsESATA|Bool|ESATA 지원여부|
-|ntpEnabled|Bool|NTP 사용여부|
-|ntpServer|String|NTP 서버|
-|temperature|Int|장치 온도|
-|temperatureWarning|Bool|온도로 인한 문제여부|
+|model|String|Device model name|
+|serial|String|Device serial number|
+|cpu|System.Info.CPU|CPU info|
+|ram|Int|RAM capacity|
+|firmwareVersion|String|Firmware version|
+|supportsESATA|Bool|ESATA support status|
+|ntpEnabled|Bool|NTP usage status|
+|ntpServer|String|NTP server name|
+|temperature|Int|Device temperature|
+|temperatureWarning|Bool|Temperature warning status|
 |upTime|TimeInterval|장치가 부팅된 후 경과한 시간|
-|usbDevices|Array<System.Info.USB>|연결 된 USB 장치 정보|
+|usbDevices|Array<System.Info.USB>|Connected USB devices|
 ###### ... System.Info.CPU
 |Property|Type|Description|
 |--------|----|-----------|
-|clockSpeed|Int|클럭속도 (hz)|
-|coreCount|Int|코어 개수|
-|vendor|String|CPU 제조사|
-|family|String|CPU 브랜드명|
-|series|String|CPU 모델명|
+|clockSpeed|Int|CPU clock speed (hz)|
+|coreCount|Int|Number of cpu cores|
+|vendor|String|CPU vendor|
+|family|String|CPU brand|
+|series|String|CPU model|
 ###### ... System.Info.USB
 |Property|Type|Description|
 |--------|----|-----------|
-|cls|String|
-|pid|String|장치 ID|
-|vendor|String|장치 제조사|
-|product|String|장치 이름|
+|cls|String|Device class|
+|pid|String|Device ID|
+|vendor|String|Device vendor|
+|product|String|Device name|
 |rev|String|Revision|
 |vid|String|
 
 #### StorageInfo
-`system().storageInfo()`를 사용하여 연결 된 저장장치의 상세한 정보를 읽을 수 있습니다.
+You can use `system().storageInfo()` to retrieve detailed information about the connected storage devices.
 ```swift
 let storageInfo = try await diskStation.system().storageInfo()
 ```
 ###### ... System.StorageInfo
 |Property|Type|Description|
 |--------|----|-----------|
-|drives|Array<System.StorageInfo.Drive>|드라이브 정보|
-|volumes|Array<System.StorageInfo.Volume>|볼륨 정보|
+|drives|Array<System.StorageInfo.Drive>|Drive info|
+|volumes|Array<System.StorageInfo.Volume>|Volume info|
 ###### ... System.StorageInfo.Drive
 |Property|Type|Description|
 |--------|----|-----------|
-|order|Int|순서|
-|no|String|디스크 번호|
-|path|String|디스크 경로|
-|type|String|디스크 타입|
-|capacity|UInt64|디스크 용량|
-|model|String|모델명|
-|status|String|상태|
-|temp|Int|온도|
+|order|Int|Order|
+|no|String|Disk number|
+|path|String|Disk path|
+|type|String|Disk type|
+|capacity|UInt64|Disk capacity|
+|model|String|Disk model name|
+|status|String|Disk status|
+|temp|Int|Disk temperature|
 
 ###### ... System.StorageInfo.Volume
 |Property|Type|Description|
 |--------|----|-----------|
-|name|String|이름|
-|volumeName|String|볼륨 이름|
-|type|String|볼륨 타입|
-|status|String|상태|
-|usedSize|UInt64|사용 용량|
-|totalSize|UInt64|전체 용량|
+|name|String|Volume name|
+|volumeName|String|Volume name|
+|type|String|Volume type|
+|status|String|Volume status|
+|usedSize|UInt64|Volume used capacity|
+|totalSize|UInt64|Volume capacity|
 
-### [개인설정] (Personal Settings)
-개인설정 정보를 읽기 위한 API를 제공합니다.
+<br/>
+
+### Personal Settings
+Provides an API to retrieve personal settings.
 #### Wallpaper
-`DSM`에 설정 된 배경화면 이미지를 가져옵니다.
+Retrieves the `background image` set in DSM.
 ```swift
 let wallpaperImage = try await diskStation.personalSettings().wallpaper()
-// 플랫폼에 따라 UIImage 또는 NSImage를 리턴합니다.
+// Returns either [UIImage] or [NSImage] depending on the platform.
 ```
+<br/>
 
-### [Notification]
-알림센터의 메시지들를 읽기 위한 API를 제공합니다. 메시지는 설정 된 `CodePage` 값으로 지역화 된 문자열을 읽어 옵니다. [👉 CodePage 구성](#지역화)
+### Notification
+Provides an API to read messages from the Notification Center. The messages are localized based on the configured `CodePage` value.
+<br/>
+[👉 Configure CodePage](#Localization)
 
-#### SystemNotification.Message
+#### Messages
 ```swift
 let messages = try await diskStation.notification().messages()
 ```
 ###### ... SystemNotification.Message
 |Property|Type|Description|
 |--------|----|-----------|
-|className|String|종류|
-|level|SystemnNotification.Level|레벨(`info`\|`warning`\|`error`\|`unknown`)|
-|date|Date|날짜|
-|title|String|타이틀|
-|detail|String|내용|
+|className|String|Message class|
+|level|SystemnNotification.Level|Message level(`info`\|`warning`\|`error`\|`unknown`)|
+|date|Date|Receive date|
+|title|String|Message title|
+|detail|String|Message content|
 
-### [FileStation]
-`FileStation` API는 많은 파일을 다루기 위해 `offset`과 `limit`로 구성 된 인터페이스를 제공하고 있습니다. `SwiftSynology`에서는 이 단위를 `Page`라는 구조체로 표현하고 있습니다.
+### FileStation
+The `FileStation` API provides an interface with `offset` and `limit` parameters for handling a large number of files. In `SwiftSynology`, this is represented by a `Page` structure.
 ```swift
 public struct Page<Element> {
   public let offset: Int
@@ -336,57 +333,169 @@ public struct Page<Element> {
   public var isAtEnd: Bool
 }
 ```
-`Page`는 `Sequence`, `Collection`, 그리고 `BidirectionalCollection`을 구현하여, `Swift Collection`에서 제공되는 기능들을 활용할 수 있습니다.
+`Page` implements `Sequence`, `Collection`, and `BidirectionalCollection`, allowing you to leverage the functionalities provided by `Swift Collection`.
 
 #### Info
-`fileStation().info()`는 `FileStation` 시스템의 전반적인 정보를 제공합니다.
+`fileStation().info()` provides overall information about the `FileStation` service.
 ```swift
 let info = try await diskStation.fileStation().info()
 ```
 ###### ... FileStation.Info
 |Property|Type|Description|
 |--------|----|-----------|
-|hostname|String|`DSM`의 호스트이름|
-|isManager|Bool|관리자 여부|
-|supportFileRequest|Bool|File 요청 지원여부|
-|supportFileSharing|Bool|File 공유 지원여부|
-|supportVirtualProtocols|Array<String>|지원되는 Virtual Protocol 목록|
-|systemCodepage|CodePage?|시스템 `CodePage`|
+|hostname|String|Host name of the DSM|
+|isManager|Bool|Administrator status|
+|supportFileRequest|Bool|File request support status|
+|supportFileSharing|Bool|File share support status|
+|supportVirtualProtocols|Array<String>|List of supported Virtual Protocols|
+|systemCodepage|CodePage?|System code page|
 
-#### 공유 폴더
-`공유 폴더`는 `DSM`에서 파일과 폴더를 저장하고 관리할 수 있는 기본 디렉토리입니다. `fileStation().sharedFolders()`를 통해 `공유 폴더` 정보를 가져올 수 있습니다.
+#### Shared Folder
+A `shared folder` is the primary directory in DSM for storing and managing files and folders. You can retrieve information about shared folders using `fileStation().sharedFolders()`.
 ```swift
+// Fetch all shared folders
 let sharedFolders = try await diskStation.fileStation().sharedFolders()
+
+// Fetch shared folders, limited to 10
+let sharedFolders = try await diskStation.fileStation().sharedFolders(offset: 0, limit: 10)
+// Next Page
+let sharedFolders = try await diskStation.fileStation().sharedFolders(offset: 10, limit: 10)
+
+// Fetch shared folders, sort by name (ascending)
+let sharedFolders = try await diskStation.fileStation().sharedFolders(sortBy: .ascending(.name))
+// Fetch shared folders, sort by name (dscdescending)
+let sharedFolders = try await diskStation.fileStation().sharedFolders(sortBy: .dscdescending(.name))
+
+// Fetch shared folders with additional info
+let sharedFolders = try await diskStation.fileStation().sharedFolders(additionalInfo: [.time, .volumeStatus])
 ```
 ###### ... Parameters
 |name|type|default|description|
 |----|----|-------|-----------|
-|offset|Int?|nil|요청 오프셋|
-|limit|Int?|nil|요청 최대 개수|
-|sortBy|SortBy\<FileStation.SharedFolderSortAttribute\>?|nil|정렬 방식|
-|additionalInfo|Set\<FileStation.SharedFolderAdditionalInfo\>?|nil|추가 정보|
-|onlyWritable|Bool|false|쓰기 권한이 있는 폴더만 필터링 여부|
+|offset|Int?|nil|Request offset|
+|limit|Int?|nil|Maximum count of request|
+|sortBy|SortBy\<FileStation.SharedFolderSortAttribute\>?|nil|Sorting method|
+|additionalInfo|Set\<FileStation.SharedFolderAdditionalInfo\>?|nil|Additional info|
+|onlyWritable|Bool|false|Filter only folders with write permissions|
 
 ###### ... FileStation.SharedFolder
 |Property|Type|Description|
 |--------|----|-----------|
-|name|String|이름|
-|path|String|상대 경로|
-|absolutePath|String?|절대 경로 (요청 시 `SharedFolderAdditionalInfo.absolutePath` 필요)|
-|mountPointType|String?|마운트 포인터 타입 (요청 시 `SharedFolderAdditionalInfo.mountPointType` 필요)|
-|owner|FileStation.Owner?|파일 소유자 정보 (요청 시 `SharedFolderAdditionalInfo.owner` 필요)|
-|dates|FileStation.Dates?|파일 `생성`,`수정`,`변경`,`접근` 시간 정보 (요청 시 `SharedFolderAdditionalInfo.time` 필요)|
-|permission|FileStation.Permission?|파일 퍼미션 정보 (요청 시 `SharedFolderAdditionalInfo.permission` 필요)|
-|isReadOnly|Bool?|읽기 전용 여부 (요청 시 `SharedFolderAdditionalInfo.volumeStatus` 필요)|
-|freeSpace|UInt64?|남은 용량 (요청 시 `SharedFolderAdditionalInfo.volumeStatus` 필요)|
-|totalSpace|UInt64?|전체 용량 (요청 시 `SharedFolderAdditionalInfo.volumeStatus` 필요)|
-|usesSpace|UInt64?|사용 용량 (요청 시 `SharedFolderAdditionalInfo.volumeStatus` 필요)|
+|name|String|Name of shared folder|
+|path|String|Relative path|
+|absolutePath|String?|Absolute path (`SharedFolderAdditionalInfo.absolutePath` is required when making a request.)|
+|mountPointType|String?|Mount point type (`SharedFolderAdditionalInfo.mountPointType` is required when making a request.)|
+|owner|FileStation.Owner?|File owner (`SharedFolderAdditionalInfo.owner` is required when making a request.)|
+|dates|FileStation.Dates?|File `creation`, `modification`, `change`, and `access` time info (`SharedFolderAdditionalInfo.time` is required when making a request.)|
+|permission|FileStation.Permission?|File permission info (`SharedFolderAdditionalInfo.permission` is required when making a request.)|
+|isReadOnly|Bool?|Read-only status (`SharedFolderAdditionalInfo.volumeStatus` is required when making a request.)|
+|freeSpace|UInt64?|Available space (`SharedFolderAdditionalInfo.volumeStatus` is required when making a request.)|
+|totalSpace|UInt64?|Total space (`SharedFolderAdditionalInfo.volumeStatus` is required when making a request.)|
+|usesSpace|UInt64?|Used space (`SharedFolderAdditionalInfo.volumeStatus` is required when making a request.)|
 
-#### File List
-파일목록을 가져오고 그 정보를 읽는 것은 `FileStation`에서 중요한 기능 중 하나입니다.
+#### File
+In `SynologySwift`, files and directories are represented as `FileStation.File`. The package supports operations such as file listing, directory creation, renaming, moving, copying, deleting, directory size calculation, and MD5 hash computation.
+
+The following is a simple example of retrieving a file list.
 ```swift
-let page = try await diskStation.fileStation().files(at: <#path#>)
+// Fetch all files
+let files = try await diskStation.fileStation().files(at: <#path#>)
+
+// Fetch files, limited to 10
+let files = try await diskStation.fileStation().files(at: <#path#>, offset: 0, limit: 10)
+// Next Page
+let files = try await diskStation.fileStation().files(at: <#path#>, offset: 10, limit: 10)
+
+// Fetch files, sort by name (ascending)
+let files = try await diskStation.fileStation().files(at: <#path#>, sortBy: .ascending(.name))
+// Fetch files, sort by name (dscdescending)
+let files = try await diskStation.fileStation().files(at: <#path#>, sortBy: .dscdescending(.name))
+
+// Fetch shared folders with additional info
+let files = try await diskStation.fileStation().files(at: <#path#>, additionalInfo: [.time, .size])
+```
+###### ... Parameters
+|name|type|default|description|
+|----|----|-------|-----------|
+|path|String|-|path|
+|pattern|String?|nil|filter pattern(`Glob Pattern`)|
+|offset|Int?|nil|Request offset|
+|limit|Int?|nil|Maximum count of request|
+|sortBy|SortBy\<FileStation.FileSortAttribute\>?|nil|Sorting method|
+|additionalInfo|Set\<FileStation.FileAdditionalInfo\>?|nil|Additional info|
+|type|FileStation.FileTypeFilter|nil|`.fileOnly` \| `.directoryOnly`|
+
+###### ... FileStation.File
+|Property|Type|Description|
+|--------|----|-----------|
+|name|String|Name of the file|
+|path|String|Relative path|
+|isDirectory|Bool|Directory status|
+|isValid|Bool|Validation status|
+|fileExtension|String|File extension|
+|size|UInt64?|File size (`FileAdditionalInfo.size` is required when making a request.)|
+|absolutePath|String?|Absolute path (`FileAdditionalInfo.absolutePath` is required when making a request.)|
+|mountPointType|String?|Mount point type (`FileAdditionalInfo.mountPointType` is required when making a request.)|
+|owner|FileStation.Owner?|File owner (`FileAdditionalInfo.owner` is required when making a request.)|
+|dates|FileStation.Dates?|File `creation`, `modification`, `change`, and `access` time info (`FileAdditionalInfo.time` is required when making a request.)|
+|permission|FileStation.Permission?|File permission info (`FileAdditionalInfo.permission` is required when making a request.)|
+
+#### ShareLink
+ShareLink is a service that allows you to easily share files or folders stored on a Synology NAS. By sharing the URL or QR code of the ShareLink with others, they can download the selected files or folders regardless of whether they have a DSM account.
+<br/>
+This package supports operations such as `listing`, `creating`, `editing`, and `deleting` ShareLinks.
+
+The following is a simple example of creating a ShareLink.
+```swift
+let shareLink = try await diskStation.fileStation().createShareLink(path: <#filePath#>)
+```
+###### ... Parameters
+|name|type|default|description|
+|----|----|-------|-----------|
+|path|String|-|File path|
+|password|String|nil|Share password|
+|availableDate|Date|nil|Availabel date|
+|expiredDate|Date|nil|Expired date|
+
+###### ... FileStation.ShareLink
+|Property|Type|Description|
+|--------|----|-----------|
+|id|String|Link ID|
+|url|URL|Link URL|
+|qrcode|String|QR Code(Base64 encoded)|
+|name|String|File name|
+|path|String|File path|
+|isDirectory|Bool|Directory status|
+|status|FileStation.ShareLink.Status|Lin status|
+|hasPassword|Bool|Password requirement status|
+|owner|String|File owner|
+|availableDate|String|Available date (yyyy-MM-dd HH:mm:ss)|
+|expiredDate|String|Expired date (yyyy-MM-dd HH:mm:ss)|
+
+#### Background Task
+Operations such as copying, compression, or MD5 hash computation in FileStation can take a long time. These tasks are classified as BackgroundTasks and managed internally by DSM. In this package, the `BackgroundTask<Completed, Processing>` is abstracted as an actor, allowing continuous status monitoring using a polling method. `BackgroundTask.status()` returns the status via an `AsyncThrowingStream` at intervals specified by `pollingInterval` until the task is completed.
+
+The following is an example of using `BackgroundTask` for the `copy`.
+```swift
+let task = try await diskStation.fileStation()
+  .copy(
+    filesPaths: [<#filePath#>],
+    destinationFilePath: <#destinationFilePath#>,
+    overwrite: true
+  )
+
+for try await status in try await task.status(pollingInterval: .seconds(1)) {
+  switch status {
+  case .processing(let progress):
+    print("😄 \(progress)")
+  case .completed:
+    print("😄 completed")
+  }
+}
 ```
 
-## 라이센스
+### DownloadStation
+#### WIP
+
+## License
 MIT license. See [LICENSE](https://github.com/Jaesung-Jung/SwiftSynology/blob/main/LICENSE) for details.
