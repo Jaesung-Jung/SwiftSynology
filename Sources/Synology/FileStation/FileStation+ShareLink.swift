@@ -165,9 +165,9 @@ extension FileStation {
     /// User name of file owner.
     public let owner: String
     /// The available date of the sharing link in the format yyyy-MM-dd HH:mm:ss.
-    public let availableDate: Date
+    public let availableDate: String
     /// The expiration date of the sharing link in the format yyyy-MM-dd HH:mm:ss.
-    public let expiredDate: Date
+    public let expiredDate: String
     // An image of QR code describing the URL of the sharing link.
     public var qrcodeImage: PlatformImage? {
       qrcode.firstIndex(of: ",")
@@ -176,7 +176,7 @@ extension FileStation {
         .flatMap { PlatformImage(data: $0) }
     }
 
-    public init(id: String, url: URL, qrcode: String, name: String, path: String, isDirectory: Bool, status: Status, hasPassword: Bool, owner: String, availableDate: Date, expiredDate: Date) {
+    public init(id: String, url: URL, qrcode: String, name: String, path: String, isDirectory: Bool, status: Status, hasPassword: Bool, owner: String, availableDate: String, expiredDate: String) {
       self.id = id
       self.url = url
       self.qrcode = qrcode
@@ -201,8 +201,8 @@ extension FileStation {
       self.status = try container.decode(Status.self, forKey: "status")
       self.hasPassword = try container.decode(Bool.self, forKey: "has_password")
       self.owner = try container.decode(String.self, forKey: "link_owner")
-      self.availableDate = try container.decode(Date.self, forKey: "date_available")
-      self.expiredDate = try container.decode(Date.self, forKey: "date_expired")
+      self.availableDate = try container.decode(String.self, forKey: "date_available")
+      self.expiredDate = try container.decode(String.self, forKey: "date_expired")
     }
 
     /// The accessibility status of the sharing link.
