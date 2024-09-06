@@ -193,7 +193,7 @@ let authorization = try await diskStation.auth().login(
 )
 ```
 
-#### 로그아웃
+#### Logout
 You can explicitly log out from the device using the `logout()` API. Performing this action will invalidate the `sessionID` issued by DSM.
 ```swift
 try await diskStation.logout()
@@ -438,7 +438,7 @@ let files = try await diskStation.fileStation().files(at: <#path#>, additionalIn
 |mountPointType|String?|Mount point type (`FileAdditionalInfo.mountPointType` is required when making a request.)|
 |owner|FileStation.Owner?|File owner (`FileAdditionalInfo.owner` is required when making a request.)|
 |dates|FileStation.Dates?|File `creation`, `modification`, `change`, and `access` time info (`FileAdditionalInfo.time` is required when making a request.)|
-|permission|FileStation.Permission?|파일 퍼미션 정보 (`FileAdditionalInfo.permission` is required when making a request.)|
+|permission|FileStation.Permission?|File permission info (`FileAdditionalInfo.permission` is required when making a request.)|
 
 #### ShareLink
 ShareLink is a service that allows you to easily share files or folders stored on a Synology NAS. By sharing the URL or QR code of the ShareLink with others, they can download the selected files or folders regardless of whether they have a DSM account.
