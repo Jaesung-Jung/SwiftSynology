@@ -169,7 +169,7 @@ extension FileStation {
     /// The expiration date of the sharing link in the format yyyy-MM-dd HH:mm:ss.
     public let expiredDate: Date
     // An image of QR code describing the URL of the sharing link.
-    public var quecodeImage: PlatformImage? {
+    public var qrcodeImage: PlatformImage? {
       qrcode.firstIndex(of: ",")
         .map { qrcode[qrcode.index(after: $0)...] }
         .flatMap { Data(base64Encoded: String($0)) }
