@@ -241,7 +241,7 @@ let info = try await diskStation.system().info()
 |ntpServer|String|NTP server name|
 |temperature|Int|Device temperature|
 |temperatureWarning|Bool|Temperature warning status|
-|upTime|TimeInterval|장치가 부팅된 후 경과한 시간|
+|upTime|TimeInterval|Elapsed time since the device was booted|
 |usbDevices|Array<System.Info.USB>|Connected USB devices|
 ###### ... System.Info.CPU
 |Property|Type|Description|
