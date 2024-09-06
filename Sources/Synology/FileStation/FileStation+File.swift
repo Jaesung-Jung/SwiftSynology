@@ -72,18 +72,18 @@ extension FileStation {
     return try await dataTask(api).data(path: "files")
   }
 
-  public func create(directoryPath: String, name: String, createIntermediateDirectories: Bool? = nil, additionalInfo: Set<FileAdditionalInfo>? = nil) async throws -> File {
-    return try await create(directory: NewDirectoryInfo(path: directoryPath, name: name))
+  public func createDirectory(path: String, name: String, createIntermediateDirectories: Bool? = nil, additionalInfo: Set<FileAdditionalInfo>? = nil) async throws -> File {
+    return try await create(CreateDirectoryInfo(path: path, name: name))
   }
 
-  public func create(directory: NewDirectoryInfo, createIntermediateDirectories: Bool? = nil, additionalInfo: Set<FileAdditionalInfo>? = nil) async throws -> File {
-    guard let directory = try await create(directories: [directory], createIntermediateDirectories: createIntermediateDirectories, additionalInfo: additionalInfo).first else {
+  public func create(_ directory: CreateDirectoryInfo, createIntermediateDirectories: Bool? = nil, additionalInfo: Set<FileAdditionalInfo>? = nil) async throws -> File {
+    guard let directory = try await create([directory], createIntermediateDirectories: createIntermediateDirectories, additionalInfo: additionalInfo).first else {
       throw Failure.invalidResponse
     }
     return directory
   }
 
-  public func create(directories: [NewDirectoryInfo], createIntermediateDirectories: Bool? = nil, additionalInfo: Set<FileAdditionalInfo>? = nil) async throws -> [File] {
+  public func create(_ directories: [CreateDirectoryInfo], createIntermediateDirectories: Bool? = nil, additionalInfo: Set<FileAdditionalInfo>? = nil) async throws -> [File] {
     let api = DiskStationAPI<[File]>(
       name: "SYNO.FileStation.CreateFolder",
       method: "create",
@@ -516,16 +516,20 @@ extension FileStation {
   }
 }
 
-// MARK: - FileStation.NewDirectoryInfo
+// MARK: - FileStation.CreateDirectoryInfo
 
 extension FileStation {
-  public struct NewDirectoryInfo {
+  public struct CreateDirectoryInfo {
     public let path: String
     public let name: String
 
     public init(path: String, name: String) {
       self.path = path
       self.name = name
+    }
+
+    @inlinable public static func directory(path: String, name: String) -> CreateDirectoryInfo {
+      return CreateDirectoryInfo(path: path, name: name)
     }
   }
 }
