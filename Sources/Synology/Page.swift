@@ -30,10 +30,10 @@ public struct Page<Element: Decodable> {
 
   public var isAtEnd: Bool { elements.count >= totalCount }
 
-  public init(offset: Int, totalCount: Int, elements: [Element]) {
+  public init<C: Collection>(offset: Int, totalCount: Int, elements: C) where C.Element == Element {
     self.offset = offset
     self.totalCount = totalCount
-    self.elements = elements
+    self.elements = Array(elements)
   }
 }
 
