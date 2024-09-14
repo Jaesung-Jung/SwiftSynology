@@ -21,21 +21,29 @@ let package = Package(
     .package(
       url: "https://github.com/Alamofire/Alamofire.git",
       .upToNextMajor(from: "5.8.0")
-    )
+    ),
+    .package(
+      url: "https://github.com/swiftlang/swift-testing.git",
+      .upToNextMajor(from: "0.12.0")
+    ),
+    .package(
+      url: "https://github.com/AliSoftware/OHHTTPStubs.git",
+      .upToNextMajor(from: "9.1.0"))
   ],
   targets: [
     .target(
       name: "Synology",
       dependencies: [
-        .product(
-          name: "Alamofire",
-          package: "Alamofire"
-        )
+        .product(name: "Alamofire", package: "Alamofire")
       ]
     ),
     .testTarget(
       name: "SynologyTests",
-      dependencies: ["Synology"]
+      dependencies: [
+        "Synology",
+        .product(name: "Testing", package: "swift-testing"),
+        .product(name: "OHHTTPStubsSwift", package: "OHHTTPStubs")
+      ]
     )
   ]
 )
