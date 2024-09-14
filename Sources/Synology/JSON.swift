@@ -102,10 +102,12 @@ struct JSON {
   }
 
   func value(_ type: Int.Type = Int.self) -> Int? {
-    guard case .integer(let int) = element else {
-      return nil
+    if case .integer(let int) = element {
+      return int
+    } else if case .bool(let bool) = element {
+      return bool ? 1 : 0
     }
-    return int
+    return nil
   }
 
   func value(_ type: Double.Type = Double.self) -> Double? {
