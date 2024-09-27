@@ -37,7 +37,6 @@ struct PoingPongTests {
     }
     let pingPong = PingPoing()
     let pong = try await pingPong.ping(to: url)
-    print(pong)
     #expect(pong.success == success && pong.ezid == ezid)
   }
 }
