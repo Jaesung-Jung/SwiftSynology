@@ -32,7 +32,7 @@ actor StringStore: DSRequestable, AuthenticationProviding {
   private var _uiStrings: JSON?
 
   let serverURL: URL
-  let session: Session
+  nonisolated let session: Session
   let apiInfo: APIInfo?
   let auth: AuthStore
   let codePage: CodePage

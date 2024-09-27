@@ -33,7 +33,7 @@ public actor Region: DSRequestable, AuthenticationProviding {
   private var _timeZones: [String: TimeZone]?
 
   let serverURL: URL
-  let session: Session
+  nonisolated let session: Session
   let apiInfo: APIInfo?
   let auth: AuthStore
 

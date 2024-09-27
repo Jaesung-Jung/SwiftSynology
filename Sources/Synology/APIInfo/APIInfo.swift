@@ -30,7 +30,7 @@ public actor APIInfo: DSRequestable {
   typealias Failure = DiskStationError
 
   let serverURL: URL
-  let session: Session
+  nonisolated let session: Session
   var sessionID: String? { nil }
   var items: [String: Item]?
 

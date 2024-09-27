@@ -28,7 +28,7 @@ public actor Auth: DSRequestable, AuthenticationProviding {
   typealias Failure = AuthError
 
   let serverURL: URL
-  let session: Session
+  nonisolated let session: Session
   let apiInfo: APIInfo?
   let auth: AuthStore
 
